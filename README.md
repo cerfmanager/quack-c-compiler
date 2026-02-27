@@ -12,17 +12,17 @@ Install all the python files
 ## Usage
 
 for windows run 
-'''
+```
 python quompiler.py [name of your file].c
 python quassembler.py [same file name].qasm
-'''
+```
 then run it in the duck.c bin
 
 for macos and linux
-'''
+```
 python3 quompiler.py [name of your file].c
 python3 quassembler.py [same file name].qasm
-'''
+```
 
 
 ## Roadmap
