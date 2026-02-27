@@ -1,9 +1,5 @@
 import re
 
-import qAvtAsm
-import qparser
-import quodeEmitter
-
 tokens = []
 
 regexes = {
@@ -32,30 +28,22 @@ class Token:
         self.value = value
 
 
-with open("test.q") as file:
-    code = file.read()
+def lex(filePath):
+    with open(filePath) as file:
+        code = file.read()
 
-for match in master_pattern.finditer(code):
-    token_type = match.lastgroup
-    value = match.group()
+    for match in master_pattern.finditer(code):
+        token_type = match.lastgroup
+        value = match.group()
 
-    if token_type == "SKIP":
-        continue
-    elif token_type == "Constant":
-        tokens.append(Token("Constant", int(value)))
-    elif token_type == "Identifier":
-        tokens.append(Token("Identifier", value))
-    else:
-        tokens.append(Token(token_type))
+        if token_type == "SKIP":
+            continue
+        elif token_type == "Constant":
+            tokens.append(Token("Constant", int(value)))
+        elif token_type == "Identifier":
+            tokens.append(Token("Identifier", value))
+        else:
+            tokens.append(Token(token_type))
 
-if not tokens:
-    raise Exception("No tokens found in this file")
-
-for thingy in tokens:
-    print(f"{thingy.keyword} {thingy.value}")
-
-
-AVT = qparser.parseProgram(tokens)
-AVTASM = qAvtAsm.parseProgram(AVT)
-quodeEmitter.AsmNodesToQuack(AVTASM)
-quodeEmitter.writeTofile()
+    if not tokens:
+        raise Exception("No tokens found in this file")

@@ -57,9 +57,7 @@ def parseRegister(adr):
 
 def parseInstructions(Node):
     instructions = []
-    print(type(Node))
     if isinstance(Node, qp.Return):
-        print(type(Node.expression))
         if isinstance(Node.expression, qp.Constant):
             immediate = parseImm(Node.expression.value)
             register = parseRegister("r0")
