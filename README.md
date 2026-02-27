@@ -5,19 +5,19 @@
 Alexandre Kozlowski DACS Computer Science 
 
 ## Description
-This is a small c compiler written currently in c , it compiles standard C to a cpu emulator that reads DUCK bin files , the compiler turns C into QASM which can be then translated to DUCK by the Quassembler , which can then be read by the cpu emulator
+This is a small c compiler written currently in python , it compiles standard C to a cpu emulator that reads DUCK bin files , the compiler turns C into QASM which can be then translated to DUCK by the Quassembler , which can then be read by the cpu emulator
 
 ## Installation
 Install all the python files 
 
 ## Usage
-currently incorrect as it only works for the test.q file and the commands you must run are qlexer.py and quassembler.py ./test.qasm
 
 for windows run 
 ```
-python quompiler.py [name of your file].c
+python qompiler.py [name of your file].c
 python quassembler.py [same file name].qasm
 ```
+for the assembler you will find your file in the same folder as where the compiler sits so if you dont move it you will have to refence the correct folder 
 then run it in the duck.c bin
 
 for macos and linux

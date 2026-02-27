@@ -23,6 +23,6 @@ def AsmNodesToQuack(Node):
             lines.append("    halt\n")
 
 
-def writeTofile():
-    with open("test.qasm", "w") as file:
+def writeTofile(file):
+    with open(f"{file}.qasm", "w") as file:
         file.writelines(lines)
