@@ -2,6 +2,7 @@ import re
 
 import qAvtAsm
 import qparser
+import quodeEmitter
 
 tokens = []
 
@@ -56,4 +57,5 @@ for thingy in tokens:
 
 AVT = qparser.parseProgram(tokens)
 AVTASM = qAvtAsm.parseProgram(AVT)
-print(qAvtAsm.prettyPrint(AVTASM))
+quodeEmitter.AsmNodesToQuack(AVTASM)
+quodeEmitter.writeTofile()
