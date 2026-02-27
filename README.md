@@ -11,7 +11,7 @@ This is a small c compiler written currently in c , it compiles standard C to a 
 Install all the python files 
 
 ## Usage
-
+currently incorrect as it only works for the test.q file and the commands you must run are qlexer.py and quassembler.py ./test.qasm
 for windows run 
 ```
 python quompiler.py [name of your file].c
