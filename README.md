@@ -1,4 +1,5 @@
 # Quompiler
+![Static Badge](https://img.shields.io/badge/python-blue)
 
 # Author
 Alexandre Kozlowski DACS Computer Science 
