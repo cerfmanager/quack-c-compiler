@@ -36,14 +36,15 @@ def lex(filePath):
         token_type = match.lastgroup
         value = match.group()
 
-        if token_type == "SKIP":
-            continue
-        elif token_type == "Constant":
-            tokens.append(Token("Constant", int(value)))
-        elif token_type == "Identifier":
-            tokens.append(Token("Identifier", value))
-        else:
-            tokens.append(Token(token_type))
+        match token_type:
+            case "SKIP":
+                continue
+            case "Constant":
+                tokens.append(Token("Constant", int(value)))
+            case "Identifier":
+                tokens.append(Token("Identifier", value))
+            case _:
+                tokens.append(Token(token_type))
 
     if not tokens:
         raise Exception("No tokens found in this file")

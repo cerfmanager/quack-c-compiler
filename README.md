@@ -7,6 +7,10 @@ Alexandre Kozlowski DACS Computer Science
 ## Description
 This is a small c compiler written currently in python , it compiles standard C to a cpu emulator that reads DUCK bin files , the compiler turns C into QASM which can be then translated to DUCK by the Quassembler , which can then be read by the cpu emulator
 
+## requirements 
+
+python 3.13.5 (this is installed by default on mac and linux and is easily downloadable on the python website for windows)
+
 ## Installation
 Install all the python files 
 
