@@ -49,8 +49,14 @@ def parseStatement(tokens):
 
 
 def parseExp(tokens):
-    newTokens = expect("Constant", tokens)
-    return Constant(tokens[0].value), newTokens
+    nextToken, innerExp = takeToken(tokens)
+    if nextToken.keyword == "Open_parenthesis":
+        ExpVal = parseExp(innerExp)
+        newTokens = expect("Close_parenthesis", tokens)
+        return ExpVal, newTokens
+    else:
+        newTokens = expect("Constant", tokens)
+        return Constant(tokens[0].value), newTokens
 
 
 def expect(expected, tokens):

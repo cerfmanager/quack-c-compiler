@@ -14,6 +14,9 @@ hexmap = {
     "rmmovbr": 0x09,
     "addw": 0x10,
     "subw": 0x11,
+    "incw": 0x12,
+    "decw": 0x13,
+    "clrw": 0x14,
     "cmpw": 0x15,
     "jmp": 0x20,
     "je": 0x21,
@@ -23,6 +26,7 @@ hexmap = {
     "ret": 0x33,
     "pushw": 0x30,
     "popw": 0x31,
+    "outc": 0x40,
 }
 
 jumpMap = {}
@@ -99,6 +103,15 @@ def readASMFile():
                         ra = int(parts[1].replace("r", ""))
                         b2 = int(parts[2].replace("r", ""))
 
+                    case "incw":
+                        ra = int(parts[1].replace("r", ""))
+
+                    case "decw":
+                        ra = int(parts[1].replace("r", ""))
+
+                    case "clrw":
+                        ra = int(parts[1].replace("r", ""))
+
                     case "cmpw":
                         ra = int(parts[1].replace("r", ""))
                         b2 = int(parts[2].replace("r", ""))
@@ -121,6 +134,9 @@ def readASMFile():
                         addr = jumpMap[parts[1]]
                         b2 = addr & 0xFF
                         b3 = (addr >> 8) & 0xFF
+
+                    case "outc":
+                        ra = int(parts[1].replace("r", ""))
 
                     case "halt":
                         pass
