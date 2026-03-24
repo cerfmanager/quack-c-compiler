@@ -1,6 +1,6 @@
 # Quompiler
 ![Static Badge](https://img.shields.io/badge/python-blue)
-
+![Static Badge](https://img.shields.io/badge/rust-orange)
 # Author
 Alexandre Kozlowski DACS Computer Science 
 
@@ -32,7 +32,7 @@ python3 quassembler.py [same file name].qasm
 
 
 ## Roadmap
-I will soon finish the basic compiler for basic instructions, if I still have motivation after that I might rewrite everything in zig for the type safety
+Currently starting the refactor to rust, this might take a while as I get used to the language
 
 
 ## Authors and acknowledgment
