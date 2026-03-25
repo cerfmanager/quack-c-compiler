@@ -1,0 +1,106 @@
+warning: virtual workspace defaulting to `resolver = "1"` despite one or more workspace members being on edition 2024 which implies `resolver = "3"`
+  |
+  = note: to keep the current resolver, specify `workspace.resolver = "1"` in the workspace root's manifest
+  = note: to use the edition 2024 resolver, specify `workspace.resolver = "3"` in the workspace root's manifest
+  = note: for more details see https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   0.047313542s  INFO prepare_target{force=false package_id=cargo_compiler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/compiler/cargo_compiler) target="cargo_compiler"}: cargo::core::compiler::fingerprint: fingerprint error for cargo_compiler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/compiler/cargo_compiler)/Check { test: false }/TargetInner { name: "cargo_compiler", doc: true, ..: with_path("/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/compiler/cargo_compiler/src/main.rs", Edition2024) }
+   0.047338792s  INFO prepare_target{force=false package_id=cargo_compiler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/compiler/cargo_compiler) target="cargo_compiler"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/target/debug/.fingerprint/cargo_compiler-fe3fae3c46b601ae/bin-cargo_compiler`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::prepare_target
+   4: cargo::core::compiler::compile
+   5: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   6: cargo::ops::cargo_compile::compile_ws
+   7: cargo::ops::cargo_compile::compile_with_exec
+   8: cargo::ops::cargo_compile::compile
+   9: cargo::commands::check::exec
+  10: <cargo::cli::Exec>::exec
+  11: cargo::cli::main
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.052287708s  INFO prepare_target{force=false package_id=cargo_compiler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/compiler/cargo_compiler) target="cargo_compiler"}: cargo::core::compiler::fingerprint: fingerprint error for cargo_compiler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/compiler/cargo_compiler)/Check { test: true }/TargetInner { name: "cargo_compiler", doc: true, ..: with_path("/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/compiler/cargo_compiler/src/main.rs", Edition2024) }
+   0.052298208s  INFO prepare_target{force=false package_id=cargo_compiler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/compiler/cargo_compiler) target="cargo_compiler"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/target/debug/.fingerprint/cargo_compiler-d85ad8798d379eff/test-bin-cargo_compiler`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::prepare_target
+   4: cargo::core::compiler::compile
+   5: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   6: cargo::ops::cargo_compile::compile_ws
+   7: cargo::ops::cargo_compile::compile_with_exec
+   8: cargo::ops::cargo_compile::compile
+   9: cargo::commands::check::exec
+  10: <cargo::cli::Exec>::exec
+  11: cargo::cli::main
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.052491667s  INFO prepare_target{force=false package_id=rust_assembler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/assembler/rust_assembler) target="rust_assembler"}: cargo::core::compiler::fingerprint: fingerprint error for rust_assembler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/assembler/rust_assembler)/Check { test: false }/TargetInner { name: "rust_assembler", doc: true, ..: with_path("/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/assembler/rust_assembler/src/main.rs", Edition2024) }
+   0.052503667s  INFO prepare_target{force=false package_id=rust_assembler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/assembler/rust_assembler) target="rust_assembler"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/target/debug/.fingerprint/rust_assembler-b45e270f3eb9ac2b/bin-rust_assembler`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::prepare_target
+   4: cargo::core::compiler::compile
+   5: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   6: cargo::ops::cargo_compile::compile_ws
+   7: cargo::ops::cargo_compile::compile_with_exec
+   8: cargo::ops::cargo_compile::compile
+   9: cargo::commands::check::exec
+  10: <cargo::cli::Exec>::exec
+  11: cargo::cli::main
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+   0.052680708s  INFO prepare_target{force=false package_id=rust_assembler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/assembler/rust_assembler) target="rust_assembler"}: cargo::core::compiler::fingerprint: fingerprint error for rust_assembler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/assembler/rust_assembler)/Check { test: true }/TargetInner { name: "rust_assembler", doc: true, ..: with_path("/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/assembler/rust_assembler/src/main.rs", Edition2024) }
+   0.052692458s  INFO prepare_target{force=false package_id=rust_assembler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/assembler/rust_assembler) target="rust_assembler"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/target/debug/.fingerprint/rust_assembler-02d2140120425918/test-bin-rust_assembler`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   2: cargo_util::paths::read
+   3: cargo::core::compiler::fingerprint::prepare_target
+   4: cargo::core::compiler::compile
+   5: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   6: cargo::ops::cargo_compile::compile_ws
+   7: cargo::ops::cargo_compile::compile_with_exec
+   8: cargo::ops::cargo_compile::compile
+   9: cargo::commands::check::exec
+  10: <cargo::cli::Exec>::exec
+  11: cargo::cli::main
+  12: cargo::main
+  13: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  14: std::rt::lang_start::<()>::{closure#0}
+  15: std::rt::lang_start_internal
+  16: _main
+    Checking rust_assembler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/assembler/rust_assembler)
+    Checking cargo_compiler v0.1.0 (/Users/alexandre/Documents/computer architecture/c code/quack/quompiler/compiler/cargo_compiler)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.26s
