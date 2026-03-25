@@ -51,7 +51,7 @@ fn set_up_jump_map(buffer: &String) -> HashMap<String, u16> {
 }
 
 fn read_file(path: &String) -> String {
-    let path = "./data/".to_owned() + &path;
+    let path = &path;
     let mut file = match File::open(path) {
         Ok(v) => v,
         Err(e) => panic!("{}", e),

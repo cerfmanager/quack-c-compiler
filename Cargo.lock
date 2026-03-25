@@ -3,9 +3,9 @@
 version = 4
 
 [[package]]
-name = "cargo_compiler"
+name = "rust_assembler"
 version = "0.1.0"
 
 [[package]]
-name = "rust_assembler"
+name = "rust_compiler"
 version = "0.1.0"

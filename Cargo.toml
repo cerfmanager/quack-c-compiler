@@ -1,4 +1,5 @@
 [workspace]
-members = ["compiler/cargo_compiler",
+members = ["compiler/rust_compiler",
     "assembler/rust_assembler"
 ]
+resolver = "3"
