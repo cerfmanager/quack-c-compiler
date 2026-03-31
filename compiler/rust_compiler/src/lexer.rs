@@ -2,7 +2,7 @@ use std::env;
 use std::fs::File;
 use std::io::{Read, Write};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Tokens {
     Int,
     Void,
