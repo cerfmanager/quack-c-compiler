@@ -85,15 +85,12 @@ fn read_file(path: &String) -> String {
     return buffer;
 }
 
-pub fn lexer() {
-    let args: Vec<String> = env::args().collect();
-
-    let buffer = {
-        let path = &args[1].to_owned();
-        read_file(&path)
-    };
+pub fn lexer(path: &str) -> Vec<Tokens> {
+    let buffer = { read_file(&path.to_string()) };
 
     let tokens = lex(&buffer);
 
     println!("{:?}", tokens);
+
+    return tokens;
 }
