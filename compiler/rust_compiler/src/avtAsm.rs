@@ -10,12 +10,12 @@ pub enum Expression {
 }
 
 pub struct Function {
-    identifier: String,
-    body: Vec<Instructions>,
+    pub identifier: String,
+    pub body: Vec<Instructions>,
 }
 
 pub struct Program {
-    function: Function,
+    pub function: Function,
 }
 
 pub fn parse_imm(value: i64) -> Expression {

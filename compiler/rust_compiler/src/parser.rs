@@ -52,35 +52,50 @@ pub fn parse_statement(tokens: &mut Vec<Tokens>) -> Statement {
 }
 
 pub fn parse_exp(tokens: &mut Vec<Tokens>) -> Expression {
-    let next_token = peep_token(tokens);
-    if next_token == Tokens::OpenParenthesis {
-        let exp_val = parse_exp(tokens);
-        expect(Tokens::CloseBrace, tokens);
-        return exp_val;
-    } else {
-        let val = expect(Tokens::Constant(0), tokens);
-        return Expression::Constant(val.parse().unwrap());
+    // let next_token = peep_token(tokens);
+    // if next_token == Tokens::OpenParenthesis {
+    //     let exp_val = parse_exp(tokens);
+    //     expect(Tokens::CloseParenthesis, tokens);
+    //     return exp_val;
+    // } else {
+    //     let val = expect(Tokens::Constant(0), tokens);
+    //     return Expression::Constant(val.parse().unwrap());
+    // }
+
+    match peep_token(tokens) {
+        Tokens::CloseParenthesis => {
+            let exp_val = parse_exp(tokens);
+            expect(Tokens::CloseParenthesis, tokens);
+            return exp_val;
+        }
+        _ => {
+            let val = expect(Tokens::Constant(0), tokens);
+            return Expression::Constant(val.parse().unwrap());
+        }
     }
 }
 
 pub fn expect(expected: Tokens, tokens: &mut Vec<Tokens>) -> String {
     let token = take_token(tokens);
-    if token != expected {
-        panic! {"Syntax error, expected {:?} , found {:?}",token,expected};
+    let matches = match (&expected, &token) {
+        (Tokens::Identifier(_), Tokens::Identifier(_)) => true, // any identifier
+        (Tokens::Constant(_), Tokens::Constant(_)) => true,     // any constant
+        _ => token == expected,
+    };
+    if !matches {
+        panic!("Syntax error, expected {:?}, found {:?}", expected, token);
     }
     match token {
-        Tokens::Identifier(v) => v.to_string(),
+        Tokens::Identifier(v) => v,
         Tokens::Constant(v) => v.to_string(),
         _ => "".to_string(),
     }
 }
 
 pub fn take_token(tokens: &mut Vec<Tokens>) -> Tokens {
-    let token = tokens.iter_mut().next().unwrap().to_owned();
-    return token;
+    tokens.remove(0)
 }
 
-pub fn peep_token(tokens: &mut Vec<Tokens>) -> Tokens {
-    let token = tokens.iter().peekable().peek_mut().unwrap().clone();
-    return token;
+pub fn peep_token(tokens: &mut Vec<Tokens>) -> &Tokens {
+    &tokens[0]
 }

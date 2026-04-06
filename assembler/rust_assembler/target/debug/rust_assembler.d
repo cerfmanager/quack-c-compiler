@@ -1,1 +1,0 @@
-/Users/alexandre/Documents/computer\ architecture/c\ code/quack/quompiler/assembler/rust_assembler/target/debug/rust_assembler: /Users/alexandre/Documents/computer\ architecture/c\ code/quack/quompiler/assembler/rust_assembler/src/main.rs
