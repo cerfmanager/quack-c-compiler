@@ -15,12 +15,12 @@ pub enum Statement {
 }
 
 pub struct Function {
-    identifier: String,
-    body: Statement,
+    pub identifier: String,
+    pub body: Statement,
 }
 
 pub struct Program {
-    function: Function,
+    pub function: Function,
 }
 
 pub fn parse_program(tokens: &mut Vec<Tokens>) -> Program {
@@ -41,10 +41,7 @@ pub fn parse_function(tokens: &mut Vec<Tokens>) -> Function {
     expect(Tokens::OpenBrace, tokens);
     let body = parse_statement(tokens);
     expect(Tokens::CloseBrace, tokens);
-    return Function {
-        identifier,
-        body,
-    };
+    return Function { identifier, body };
 }
 
 pub fn parse_statement(tokens: &mut Vec<Tokens>) -> Statement {
