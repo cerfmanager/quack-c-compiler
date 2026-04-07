@@ -1,6 +1,5 @@
-use std::env;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Read;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Tokens {
@@ -14,7 +13,6 @@ pub enum Tokens {
     Semicolon,
     Constant(i64),
     Identifier(String),
-    Skip,
 }
 
 fn lex(buffer: &String) -> Vec<Tokens> {

@@ -1,11 +1,5 @@
 use crate::lexer::Tokens;
 
-pub enum Expect_Val {
-    Identifier(String),
-    Constant(i64),
-    Null,
-}
-
 pub enum Expression {
     Constant(i64),
 }
@@ -78,8 +72,8 @@ pub fn parse_exp(tokens: &mut Vec<Tokens>) -> Expression {
 pub fn expect(expected: Tokens, tokens: &mut Vec<Tokens>) -> String {
     let token = take_token(tokens);
     let matches = match (&expected, &token) {
-        (Tokens::Identifier(_), Tokens::Identifier(_)) => true, // any identifier
-        (Tokens::Constant(_), Tokens::Constant(_)) => true,     // any constant
+        (Tokens::Identifier(_), Tokens::Identifier(_)) => true,
+        (Tokens::Constant(_), Tokens::Constant(_)) => true,
         _ => token == expected,
     };
     if !matches {
