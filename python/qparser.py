@@ -75,7 +75,6 @@ def takeToken(tokens):
 
 
 def prettyPrinter(obj, indent):
-
     space = "  " * indent  # 2 spaces per level
     match obj:
         case Program(functionDefinition=fd):
