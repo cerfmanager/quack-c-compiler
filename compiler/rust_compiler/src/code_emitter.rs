@@ -1,5 +1,5 @@
 use crate::avt_asm;
-use std::fmt::format;
+
 use std::fs::File;
 use std::io;
 use std::io::Write;

@@ -76,7 +76,7 @@ fn parse_expression(expr: parser::Expression, list: &mut Vec<Instructions>) {
                     list.push(comp)
                 }
                 parser::UnaryOperator::Negate => {
-                    let neg = Instructions::Comp {
+                    let neg = Instructions::Neg {
                         val: parse_register("r0"),
                     };
                     list.push(neg);
