@@ -2,6 +2,12 @@ use crate::lexer::Tokens;
 
 pub enum Expression {
     Constant(i64),
+    Unary(UnaryOperator, Box<Expression>),
+}
+
+pub enum UnaryOperator {
+    Complement,
+    Negate,
 }
 
 pub enum Statement {

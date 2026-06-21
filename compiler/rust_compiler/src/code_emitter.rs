@@ -1,4 +1,5 @@
 use crate::avt_asm;
+use std::fmt::format;
 use std::fs::File;
 use std::io;
 use std::io::Write;
@@ -35,6 +36,19 @@ fn emit_instruction(instruction: &avt_asm::Instructions, lines: &mut Vec<String>
         avt_asm::Instructions::Ret => {
             lines.push("    halt\n".to_string());
         }
+
+        avt_asm::Instructions::Comp { val } => match val {
+            avt_asm::Expression::Register(v) => {
+                lines.push(format!("    two {}\n", v));
+            }
+            _ => panic!("bitwise should not be used on immidiates "),
+        },
+        avt_asm::Instructions::Neg { val } => match val {
+            avt_asm::Expression::Register(v) => {
+                lines.push(format!("    neg {}\n", v));
+            }
+            _ => panic!("bitwise should not be used on immidiates "),
+        },
     }
 }
 pub fn write_to_file(file: &str, lines: &Vec<String>) -> io::Result<()> {

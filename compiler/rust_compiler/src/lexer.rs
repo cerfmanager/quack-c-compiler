@@ -13,6 +13,9 @@ pub enum Tokens {
     Semicolon,
     Constant(i64),
     Identifier(String),
+    BitWiseComp,
+    Negation,
+    Decrement,
 }
 
 fn lex(buffer: &String) -> Vec<Tokens> {
@@ -40,6 +43,22 @@ fn lex(buffer: &String) -> Vec<Tokens> {
                 chars.next();
                 tokens.push(Tokens::Semicolon)
             }
+            '-' => match chars.peek().expect("") {
+                '-' => {
+                    chars.next();
+                    chars.next();
+                    tokens.push(Tokens::Decrement)
+                }
+                _ => {
+                    chars.next();
+                    tokens.push(Tokens::Negation)
+                }
+            },
+            '~' => {
+                chars.next();
+                tokens.push(Tokens::BitWiseComp)
+            }
+
             ' ' | '\n' | '\t' => {
                 chars.next();
             }
