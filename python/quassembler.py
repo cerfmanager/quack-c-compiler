@@ -49,7 +49,7 @@ hexmap = {
     "halt": 0x2B,
 }
 
-# NOTE: OP_JG, OP_JL, OP_JGE, OP_JLE, OP_JA, OP_JB and OP_OUTC are defined
+# NOTE:OP_OUTC is defined
 # opcodes and will assemble correctly here, but quackk.c's cpu_step() switch
 # has no case for them yet -- running one currently hits the default
 # die("unknown opcode").
