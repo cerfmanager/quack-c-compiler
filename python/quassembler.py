@@ -31,7 +31,7 @@ hexmap = {
     "shr": 0x19,
     "sar": 0x1A,
     "sal": 0x1B,
-    "cmpw": 0x1C,
+    "cmp": 0x1C,
     "jmp": 0x1D,
     "je": 0x1E,
     "jne": 0x1F,
@@ -178,7 +178,7 @@ def readASMFile():
                         b4 = (amount >> 16) & 0xFF
                         b5 = (amount >> 24) & 0xFF
 
-                    case "cmpw":
+                    case "cmp":
                         ra = reg(parts[1])
                         b2 = reg(parts[2])
 

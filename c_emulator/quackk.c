@@ -618,8 +618,11 @@ static void cpu_step(cpu_t *cpu, int debug) {
     break;
 
   default:
-    die("unknown opcode");
+    char msg[30];
+    snprintf(msg, sizeof(msg), "unknown opcode %02X",in.op);
+    die(msg);
     break;
+
   }
 }
 static void cpu_run(cpu_t *cpu, int debug) {

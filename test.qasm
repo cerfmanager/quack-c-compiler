@@ -1,7 +1,11 @@
 main:
-    irmovd $0x0101, r0
-    irmovd  $-50, r1
-    add r0, r1
-    shl r1, $2
-    rrmovd r1, r0
+    irmovd $-5, r0
+    irmovd $10, r1
+    cmp r0, r1
+    jg .sex
+    halt
+.sex:
+    irmovd $20, r0
+    jmp .stop
+.stop:
     halt
