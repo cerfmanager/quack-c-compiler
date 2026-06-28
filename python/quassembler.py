@@ -49,7 +49,7 @@ hexmap = {
     "halt": 0x2B,
 }
 
-# NOTE:OP_OUTC is defined
+# NOTE:OP_OUTC is defined but doesnt work
 # opcodes and will assemble correctly here, but quackk.c's cpu_step() switch
 # has no case for them yet -- running one currently hits the default
 # die("unknown opcode").
@@ -131,18 +131,22 @@ def readASMFile():
                         b4 = (value >> 16) & 0xFF
                         b5 = (value >> 24) & 0xFF
 
+                    # mem -> r : $addr, rDST
                     case "mrmovb" | "mrmovw" | "mrmovd":
                         addr = imm(parts[1])
                         ra = reg(parts[2])
                         b2 = addr & 0xFF
                         b3 = (addr >> 8) & 0xFF
 
+                    # r -> mem : $DSTaddr, rSRC
                     case "rmmovb" | "rmmovw" | "rmmovd":
                         addr = imm(parts[1])
                         ra = reg(parts[2])
                         b2 = addr & 0xFF
                         b3 = (addr >> 8) & 0xFF
 
+                    # r -> r : rSRC, rDST
+                    # for sub its src - dst
                     case "add" | "sub":
                         ra = reg(parts[1])
                         b2 = reg(parts[2])
