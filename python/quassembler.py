@@ -106,25 +106,23 @@ def readASMFile():
                 ra = b2 = b3 = b4 = b5 = 0x00
 
                 match mnemonic:
-                    # register -> register: "rrmovw rSRC rDST"
+                    # r -> r : rSRC rDST
                     case "rrmovb" | "rrmovw" | "rrmovd":
                         b3 = reg(parts[1])
                         ra = reg(parts[2])
 
-                    # immediate -> register, single byte: "irmovb $imm rDST"
+                    # byte imm -> r : $val, rDST
                     case "irmovb":
                         value = imm(parts[1])
                         ra = reg(parts[2])
                         b2 = value & 0xFF
-
-                    # immediate -> register, 16-bit: "irmovw $imm rDST"
+                    # word imm -> r : $val, rDST
                     case "irmovw":
                         value = imm(parts[1])
                         ra = reg(parts[2])
                         b2 = value & 0xFF
                         b3 = (value >> 8) & 0xFF
-
-                    # immediate -> register, 32-bit: "irmovd $imm rDST"
+                    # double imm -> r : $val, rDST
                     case "irmovd":
                         value = imm(parts[1])
                         ra = reg(parts[2])
@@ -133,21 +131,18 @@ def readASMFile():
                         b4 = (value >> 16) & 0xFF
                         b5 = (value >> 24) & 0xFF
 
-                    # memory -> register: "mrmovb/w/d $addr rDST"
                     case "mrmovb" | "mrmovw" | "mrmovd":
                         addr = imm(parts[1])
                         ra = reg(parts[2])
                         b2 = addr & 0xFF
                         b3 = (addr >> 8) & 0xFF
 
-                    # register -> memory: "rmmovb/w/d $addr rSRC"
                     case "rmmovb" | "rmmovw" | "rmmovd":
                         addr = imm(parts[1])
                         ra = reg(parts[2])
                         b2 = addr & 0xFF
                         b3 = (addr >> 8) & 0xFF
 
-                    # arithmetic, register-register: "add rSRC rDST" -> rDST += rSRC
                     case "add" | "sub":
                         ra = reg(parts[1])
                         b2 = reg(parts[2])
@@ -155,12 +150,10 @@ def readASMFile():
                     case "inc" | "dec" | "clr":
                         ra = reg(parts[1])
 
-                    # logical, register-register: same operand order as add/sub
                     case "rand" | "ror" | "rxor":
                         ra = reg(parts[1])
                         b2 = reg(parts[2])
 
-                    # logical, immediate (32-bit), in place on a single register
                     case "iand" | "ior" | "ixor":
                         value = imm(parts[1])
                         ra = reg(parts[2])
@@ -169,7 +162,6 @@ def readASMFile():
                         b4 = (value >> 16) & 0xFF
                         b5 = (value >> 24) & 0xFF
 
-                    # shifts: "shl rDST $amount"
                     case "shl" | "shr" | "sar" | "sal":
                         amount = imm(parts[2])
                         ra = reg(parts[1])
