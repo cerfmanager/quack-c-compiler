@@ -7,9 +7,7 @@ full emulator rewwrite to implement ncuses cli, signed values
 TODO:
 -negative number support
 -better way to run the program , maybe a gui ?
--state of memory and all the registers
--add more registers
--larger number support ?
+-documentation on all the opcodes
 
  */
 
@@ -55,33 +53,62 @@ TODO: for io maybe implement the output in another way ???
     Opcodes
    ========================= */
 
-/* Data movement */
-// TODO: implement double word
-#define OP_RRMOVW  0x01  /* rrmovw  ra <- rb          (rb in b2)  increments pc by 4 */
-#define OP_IRMOVB  0x02  /* irmovb  ra <- imm8        (imm8 in b3) increments pc by 4 */
-#define OP_MRMOVW  0x03  /* mrmovw  ra <- mem16[imm16] increments pc by 4 */
-#define OP_RMMOVW  0x04  /* rmmovw  mem16[imm16] <- ra increments pc by 4 */
-#define OP_IRMOVW  0x05  /* irmovw  ra <- imm16       (imm16 in b2,b3) increments pc by 4 */
+// register to register movement r1 in ra and r2 in b3
+#define OP_RRMOVB 0x01
+#define OP_RRMOVW 0x02
+#define OP_RRMOVD 0x03
 
-/* Byte load/store (used by maze) */
-#define OP_MRMOVB  0x06  /* mrmovb  ra <- mem8[imm16] increments pc by 4 */
-#define OP_RMMOVB  0x07  /* rmmovb  mem8[imm16] <- low8(ra) increments pc by 4 */
-#define OP_MRMOVBR 0x08  /* mrmovbR ra <- mem8[Rb]     (rb in b2) increments pc by 4 */
-#define OP_RMMOVBR 0x09  /* rmmovbR mem8[Rb] <- low8(ra) increments pc by 4 */
+// immediate to register register in ra and value in b2 b3 b4 b5
+#define OP_IRMOVB 0x04
+#define OP_IRMOVW 0x05
+#define OP_IRMOVD 0x06
 
-/* ALU */
-#define OP_ADDW    0x10  /* addw ra <- rb (rb in b2) increments pc by 4 */
-#define OP_SUBW    0x11  /* subw ra <- rb (rb in b2) increments pc by 4 */
-#define OP_INCW    0x12  /* increase ra by 1 */
-#define OP_DECW    0x13  /* decrease ra by 1 */
-#define OP_CLRW    0x14  /* clears value in ra */
-#define OP_CMPW    0x15  /* sets ZF increments pc by 4 */
+//memory to register
+// TODO: fix the stupid memory mapping thing
+#define OP_MRMOVB 0x50
+#define OP_MRMOVW 0x51
+#define OP_MRMOVD 0x52
 
-/* Control flow */
-#define OP_JMP     0x20  /* jump to adress stored in b2 & b3 doesnt change pc */
-#define OP_JE      0x21  /* jump if ZF==1 doesnt change pc */
-#define OP_JNE     0x22  /* jump if ZF==0 doesnt change pc */
-#define OP_HALT    0x23  /* sets halted flag to 1 (cpu stops on the next cycle) doesnt change pc */
+// register to memory
+#define OP_RMMOVB 0x07
+#define OP_RMMOVW 0x08
+#define OP_RMMOVD 0x09
+
+// arithemtic
+#define OP_ADD    0x0A
+#define OP_SUB    0x0B
+#define OP_INC    0x0C
+#define OP_DEC    0x0D
+#define OP_CLR    0x0E
+
+//logical
+#define OP_RAND 0x20
+#define OP_ROR 0x21
+#define OP_RXOR 0x22
+
+#define OP_IAND 0x2A
+#define OP_IOR 0x2B
+#define OP_IXOR 0x2C
+
+// logical shift (0 fill)
+// TODO:implement shifting by a value stored in a register
+#define OP_SHL 0x23
+#define OP_SHR 0x24
+// arithmetic shit (sign fill)
+#define OP_SAR 0x25
+#define OP_SAL 0x26
+
+// control procedures
+#define OP_CMP 0x0F
+#define OP_JMP 0x10
+#define OP_JE 0x11
+#define OP_JNE 0x12
+#define OP_JG 0x13
+#define OP_JL 0x14
+#define OP_JGE 0x15
+#define OP_JLE 0x15
+#define OP_JA 0x16
+#define OP_JB 0x17
 
 /* Stack / procedures */
 #define OP_PUSHW   0x30  /* pushes value of ra onto the stack and decreases stack pointer by 2 doesnt change pc */
@@ -91,3 +118,507 @@ TODO: for io maybe implement the output in another way ???
 
 /* Output instructions */
 #define OP_OUTC    0x40  /* displays the content of ra as a character*/
+
+/*stop program execution */
+#define OP_HALT    0x5A
+
+
+
+static uint8_t memory[MEM_SIZE];
+
+typedef struct {
+    uint16_t pc;      /* program counter (address of next instruction) */
+    uint16_t sp;      /* stack pointer */
+    uint32_t r[6];    /* R0..R5 */
+    uint8_t zf;       /* zero flag */
+    uint8_t cf;       // carry flag
+    uint8_t sf;       // sign flag
+    int halted;       /* 1 if HALT executed */
+} cpu_t;
+
+/* One decoded instruction (6 bytes). */
+typedef struct {
+    uint8_t op;
+    uint8_t ra;
+    uint8_t b2;
+    uint8_t b3;
+    uint8_t b4;
+    uint8_t b5;
+} instr_t;
+
+
+
+
+
+
+
+// helper functions
+// byte word and double conversions
+// =================
+static uint16_t u16_from_le(uint8_t lo, uint8_t hi) {
+    return (uint16_t)(lo | ((uint16_t)hi << 8));
+}
+
+
+static u_int32_t u32_from_le(uint16_t lo, uint16_t hi){
+    return(uint32_t)(lo | ((uint32_t)hi << 16));
+}
+
+static u_int32_t u32_from_u8(uint8_t lo ,uint8_t mid1, uint8_t mid2, uint8_t hi){
+    return u32_from_le(u16_from_le(lo, mid1),u16_from_le(mid2,hi));
+}
+// =================
+//error handling
+// =================
+static void memory_error(uint16_t addr) {
+    printf("MEMORY ERROR at 0x%04X\n", addr);
+    exit(1);
+}
+
+static void die(const char *msg) {
+    printf("%s\n", msg);
+    exit(1);
+}
+// =================
+// memory checks
+// =================
+static void byte_memory_check(uint16_t address){
+    if(address >= MEM_SIZE){
+        memory_error(address);
+    }
+}
+
+static void word_memory_check(uint16_t address){
+    if(address >= MEM_SIZE || address >= MEM_SIZE + 1 ){
+        memory_error(address);
+    }
+}
+
+static void double_memory_check(uint16_t address){
+    if(address >= MEM_SIZE || address >= MEM_SIZE + 1 || address >= MEM_SIZE +2 || address >= MEM_SIZE +3 ){
+        memory_error(address);
+    }
+}
+// =================
+
+// memory operations
+// =================
+static uint8_t mem_read8(uint16_t addr) {
+    byte_memory_check(addr);
+    return memory[addr];
+}
+
+
+static void mem_write8(uint16_t addr, uint8_t v) {
+    byte_memory_check(addr);
+    memory[addr] = v;
+}
+
+static uint16_t mem_read16(uint16_t addr) {
+    word_memory_check(addr);
+    return memory[addr] | (memory[addr + 1] << 8);
+}
+
+
+static void mem_write16(uint16_t addr, uint16_t v) {
+    word_memory_check(addr);
+    memory[addr] = v & 0xFF;
+    memory[addr + 1] = (v >> 8) & 0xFF;
+}
+
+
+static uint32_t mem_read32(uint16_t addr) {
+    double_memory_check(addr);
+    return memory[addr] | (memory[addr + 1] << 8 ) | (memory[addr+2] << 16) | (memory[addr+3] << 24);
+}
+
+
+static void mem_write32(uint16_t addr, uint32_t v) {
+    double_memory_check(addr);
+    memory[addr] = v & 0xFF;
+    memory[addr + 1] = (v >> 8) & 0xFF;
+    memory[addr + 2] = (v >> 16) & 0xFF;
+    memory[addr + 3] = (v >> 24) & 0xFF;
+}
+// =================
+
+// cpu operations
+// =================
+static void cpu_reset(cpu_t *cpu) {
+    cpu->pc = 0;
+    cpu->sp = SP_INIT;
+    cpu->r[0] = cpu->r[1] = cpu->r[2] = cpu->r[3] = 0;
+    cpu->zf = 0;
+    cpu->halted = 0;
+}
+// cpu is passed by reference, this mean state DOES change
+static void set_zf(uint8_t r,cpu_t *cpu){
+    cpu->zf = cpu->r[r]==0;
+}
+
+static void check_reg(uint8_t r) {
+    if (r > 5) die("Invalid register index (valid: 0..3)");
+}
+
+static instr_t fetch(cpu_t *cpu) {
+    instr_t in;
+    in.op = mem_read8(cpu->pc + 0);
+    in.ra = mem_read8(cpu->pc + 1);
+    in.b2 = mem_read8(cpu->pc + 2);
+    in.b3 = mem_read8(cpu->pc + 3);
+    return in;
+}
+// =================
+
+static void mem_clear(void) {
+    for (int i = 0; i < MEM_SIZE; i++) memory[i] = 0;
+}
+
+
+static void load_program(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (!f) die("Could not open program file");
+
+    int c;
+    int addr = 0;
+    while ((c = fgetc(f)) != EOF) {
+        if (addr >= MEM_SIZE) die("Program too large for memory");
+        memory[addr++] = (uint8_t)c;
+    }
+    fclose(f);
+}
+
+
+static void cpu_step(cpu_t *cpu, int debug) {
+    (void)debug;
+
+    if (cpu->halted) return;
+
+
+    instr_t in = fetch(cpu);
+
+    /* In debug mode, print a simple trace */
+    if (debug) {
+        printf("PC=%04X OP=%02X R0=%04X R1=%04X R2=%04X R3=%04X ZF=%u SP=%04X\n",
+               cpu->pc, in.op, cpu->r[0], cpu->r[1], cpu->r[2], cpu->r[3], cpu->zf, cpu->sp);
+    }
+
+    uint16_t mem_addr;
+    // implements the opcodes defined in "INSTRUCTION OPCODES SECTION"
+    switch (in.op) {
+
+        // REGISTER TO REGISTER MOV
+
+        case OP_RRMOVB:
+            check_reg(in.ra);
+            check_reg(in.b3);
+            cpu->r[in.ra] = cpu->r[in.b3];
+            cpu->pc += 6;
+            break;
+
+        case OP_RRMOVW:
+            check_reg(in.ra);
+            check_reg(in.b3);
+            cpu->r[in.ra] = cpu->r[in.b3];
+            cpu->pc += 6;
+            break;
+
+        case OP_RRMOVD:
+            check_reg(in.ra);
+            check_reg(in.b3);
+            cpu->r[in.ra] = cpu->r[in.b3];
+            cpu->pc += 6;
+            break;
+
+        // IMMEDIATE TO REGISTER MOV
+
+        case OP_IRMOVB:
+            check_reg(in.ra);
+            cpu->r[in.ra] = (u_int32_t) in.b2;
+            cpu->pc += 6;
+            break;
+
+        case OP_IRMOVW:
+            check_reg(in.ra);
+            cpu->r[in.ra] = (u_int32_t) u16_from_le(in.b2, in.b3);
+            cpu->pc += 6;
+            break;
+
+        case OP_IRMOVD:
+            check_reg(in.ra);
+            cpu->r[in.ra] = u32_from_u8(in.b2,  in.b3,  in.b4, in.b5 );
+            cpu->pc += 6;
+            break;
+
+
+        // the implementation of IO will change the representation of this,
+
+        // MEMORY TO REGISTER MOV
+        // the memory check is done in the function itself
+        case OP_MRMOVB:
+            check_reg(in.ra);
+            mem_addr = u32_from_u8(in.b2,  in.b3,  in.b4, in.b5 );
+            cpu->r[in.ra] = mem_read8(mem_addr);
+            cpu->pc += 6;
+            break;
+
+
+        case OP_MRMOVW:
+            check_reg(in.ra);
+            mem_addr = u32_from_u8(in.b2,  in.b3,  in.b4, in.b5 );
+            cpu->r[in.ra] = mem_read16(mem_addr);
+            cpu->pc += 6;
+            break;
+
+
+        case OP_MRMOVD:
+            check_reg(in.ra);
+            mem_addr = u32_from_u8(in.b2,  in.b3,  in.b4, in.b5 );
+            cpu->r[in.ra] = mem_read32(mem_addr);
+            cpu->pc += 6;
+            break;
+
+
+        // REGISTER TO MEMORY MOV
+        // the memory check is done in the function itself
+        case OP_RMMOVB:
+            check_reg(in.ra);
+            mem_addr = u32_from_u8(in.b2,  in.b3,  in.b4, in.b5 );
+            mem_write8(mem_addr, (uint8_t)cpu->r[in.ra]);
+            cpu->pc += 6;
+            break;
+
+
+        case OP_RMMOVW:
+            check_reg(in.ra);
+            mem_addr = u32_from_u8(in.b2,  in.b3,  in.b4, in.b5 );
+            mem_write16(mem_addr, (uint16_t) cpu->r[in.ra]);
+            cpu->pc += 6;
+            break;
+
+        case OP_RMMOVD:
+            check_reg(in.ra);
+            mem_addr = u32_from_u8(in.b2,  in.b3,  in.b4, in.b5 );
+            mem_write32(mem_addr, cpu->r[in.ra]);
+            cpu->pc += 6;
+            break;
+
+        //ARITHMETIC OPERATIONS
+        case OP_ADD:
+            check_reg(in.ra);
+            check_reg(in.b2);
+            cpu->r[in.b2] += cpu->r[in.ra];
+            set_zf(in.b2, cpu);
+            cpu->pc += 6;
+            break;
+
+        case OP_SUB:
+            check_reg(in.ra);
+            check_reg(in.b2);
+            cpu->r[in.b2] -= cpu->r[in.ra];
+            set_zf(in.b2, cpu);
+            cpu->pc += 6;
+            break;
+
+        case OP_DEC:
+            check_reg(in.ra);
+            cpu->r[in.ra]--;
+            cpu->pc += 6;
+            break;
+
+        case OP_INC:
+            check_reg(in.ra);
+            cpu->r[in.ra]++;
+            cpu->pc += 6;
+            break;
+
+        case OP_CLR:
+            check_reg(in.ra);
+            cpu->r[in.ra] = 0;
+            cpu->pc += 6;
+            break;
+
+        //LOGICAL OPERATIONS
+
+        case OP_IAND:
+            check_reg(in.ra);
+            u_int32_t val_and = u32_from_u8(in.b2, in.b3 ,  in.b4,  in.b5);
+            cpu->r[in.ra] = cpu->r[in.ra] & val_and;
+            set_zf(in.ra, cpu);
+            cpu->pc += 6;
+            break;
+
+        // this isnt random , its register and
+        case OP_RAND:
+            check_reg(in.ra);
+            check_reg(in.b2);
+            cpu->r[in.b2] = cpu->r[in.ra] & cpu->r[in.b2];
+            set_zf(in.ra, cpu);
+            cpu->pc += 6;
+            break;
+
+        case OP_IOR:
+            check_reg(in.ra);
+            u_int32_t val_or = u32_from_u8(in.b2, in.b3 ,  in.b4,  in.b5);
+            cpu->r[in.ra] = cpu->r[in.ra] | val_or;
+            set_zf(in.ra, cpu);
+            cpu->pc += 6;
+
+        case OP_ROR:
+            check_reg(in.ra);
+            check_reg(in.b2);
+            cpu->r[in.b2] = cpu->r[in.ra] | cpu->r[in.b2];
+            set_zf(in.ra, cpu);
+            cpu->pc += 6;
+            break;
+
+        case OP_IXOR:
+            check_reg(in.ra);
+            u_int32_t val_xor = u32_from_u8(in.b2, in.b3 ,  in.b4,  in.b5);
+            cpu->r[in.ra] = cpu->r[in.ra] ^ val_xor;
+            set_zf(in.ra, cpu);
+            cpu->pc += 6;
+            break;
+
+        case OP_RXOR:
+            check_reg(in.ra);
+            check_reg(in.b2);
+            cpu->r[in.b2] = cpu->r[in.ra] ^ cpu->r[in.b2];
+            set_zf(in.ra, cpu);
+            cpu->pc += 6;
+            break;
+
+
+        case OP_SHL:
+            check_reg(in.ra);
+            uint32_t lls = u32_from_u8(in.b2, in.b3 ,  in.b4,  in.b5);
+            cpu->r[in.ra] = cpu->r[in.ra] << lls;
+            cpu->pc += 6;
+            break;
+
+        case OP_SHR:
+            check_reg(in.ra);
+            uint32_t rls = u32_from_u8(in.b2, in.b3 ,  in.b4,  in.b5);
+            cpu->r[in.ra] = cpu->r[in.ra] >> rls;
+            cpu->pc += 6;
+            break;
+
+
+        case OP_SAL:
+            check_reg(in.ra);
+            uint32_t las = u32_from_u8(in.b2, in.b3 ,  in.b4,  in.b5);
+            cpu->r[in.ra] = cpu->r[in.ra] << las;
+            cpu->pc += 6;
+            break;
+
+        case OP_SAR:
+            check_reg(in.ra);
+            uint32_t ras = u32_from_u8(in.b2, in.b3 ,  in.b4,  in.b5);
+            int32_t toshift = (int32_t) cpu->r[in.ra];
+            cpu->r[in.ra] = toshift >> ras;
+            cpu->pc += 6;
+            break;
+
+        // control flow
+
+        case OP_CMP:
+            check_reg(in.ra);
+            check_reg(in.b2);
+            uint8_t delta = in.ra- in.b2;
+            set_zf(delta, cpu);
+            cpu->pc += 6;
+            break;
+
+        case OP_JMP:
+            cpu->pc = u16_from_le(in.b2, in.b3 );
+            break;
+
+        case OP_JE:
+            if(cpu->zf){
+                cpu->pc = u16_from_le(in.b2, in.b3 );
+            }else{
+                cpu->pc += 6;
+            }
+            break;
+
+        case OP_JNE:
+            if(!cpu->zf){
+                cpu->pc = u16_from_le(in.b2, in.b3 );
+            }else{
+                cpu->pc += 6;
+            }
+            break;
+
+        case OP_HALT:
+                cpu->halted = 1;
+                break;
+        case OP_PUSHW:
+                check_reg(in.ra);
+                cpu->sp -= 2;
+                mem_write16(cpu->sp, cpu->r[in.ra]);
+                cpu->pc += 4;
+                break;
+        case OP_POPW:
+                check_reg(in.ra);
+                cpu->r[in.ra] = mem_read16(cpu->sp);
+                cpu->sp += 2;
+                cpu->zf = cpu->r[in.ra] == 0;
+                cpu->pc += 4;
+                break;
+        case OP_CALL:
+                cpu->sp -= 2;
+                mem_write16(cpu->sp, cpu->pc + 4);
+                cpu->pc = u16_from_le(in.b2, in.b3);
+                break;
+        case OP_RET:
+                cpu->pc = mem_read16(cpu->sp);
+                cpu->sp += 2;
+                break;
+
+
+
+
+
+
+        default:
+            die("unknown opcode");
+            break;
+    }
+
+}
+static void cpu_run(cpu_t *cpu, int debug) {
+    while (!cpu->halted) {
+        cpu_step(cpu, debug);
+        if (cpu->pc >= MEM_SIZE && !cpu->halted) die("PC out of bounds");
+    }
+}
+
+
+
+
+int main(int argc, char **argv) {
+
+
+    int debug = 0;
+    if(argc < 2){
+        die("no specified path");
+    }
+    const char* path = argv[1];
+
+    if(argc == 3 ){
+        if (strcmp(argv[2], "--debug") == 0) debug = 1;
+    }
+
+    mem_clear();
+
+    load_program(path);
+
+    cpu_t cpu;
+    cpu_reset(&cpu);
+
+    cpu_run(&cpu, debug);
+
+    printf("\nHALT\n");
+    printf("R0(final)=%04X\n", cpu.r[0]);
+    return 0;
+}

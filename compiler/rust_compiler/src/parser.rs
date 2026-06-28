@@ -44,6 +44,7 @@ pub fn parse_function(tokens: &mut Vec<Tokens>) -> Function {
     return Function { identifier, body };
 }
 
+//TODO: add the unary things here
 pub fn parse_statement(tokens: &mut Vec<Tokens>) -> Statement {
     expect(Tokens::Return, tokens);
     let return_val = parse_exp(tokens);
