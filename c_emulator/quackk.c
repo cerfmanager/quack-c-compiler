@@ -52,8 +52,6 @@ TODO: for io maybe implement the output in another way ???
 /* =========================
     Opcodes
    ========================= */
-
-// register to register movement r1 in ra and r2 in b3
 #define OP_RRMOVB 0x01
 #define OP_RRMOVW 0x02
 #define OP_RRMOVD 0x03
@@ -64,63 +62,62 @@ TODO: for io maybe implement the output in another way ???
 #define OP_IRMOVD 0x06
 
 //memory to register
-// TODO: fix the stupid memory mapping thing
-#define OP_MRMOVB 0x50
-#define OP_MRMOVW 0x51
-#define OP_MRMOVD 0x52
+#define OP_MRMOVB 0x07
+#define OP_MRMOVW 0x08
+#define OP_MRMOVD 0x09
 
 // register to memory
-#define OP_RMMOVB 0x07
-#define OP_RMMOVW 0x08
-#define OP_RMMOVD 0x09
+#define OP_RMMOVB 0x0A
+#define OP_RMMOVW 0x0B
+#define OP_RMMOVD 0x0C
 
 // arithemtic
-#define OP_ADD    0x0A
-#define OP_SUB    0x0B
-#define OP_INC    0x0C
-#define OP_DEC    0x0D
-#define OP_CLR    0x0E
+#define OP_ADD    0x0D
+#define OP_SUB    0x0E
+#define OP_INC    0x0F
+#define OP_DEC    0x10
+#define OP_CLR    0x11
 
 //logical
-#define OP_RAND 0x20
-#define OP_ROR 0x21
-#define OP_RXOR 0x22
+#define OP_RAND 0x12
+#define OP_ROR  0x13
+#define OP_RXOR 0x14
 
-#define OP_IAND 0x2A
-#define OP_IOR 0x2B
-#define OP_IXOR 0x2C
+#define OP_IAND 0x15
+#define OP_IOR  0x16
+#define OP_IXOR 0x17
 
 // logical shift (0 fill)
 // TODO:implement shifting by a value stored in a register
-#define OP_SHL 0x23
-#define OP_SHR 0x24
-// arithmetic shit (sign fill)
-#define OP_SAR 0x25
-#define OP_SAL 0x26
+#define OP_SHL 0x18
+#define OP_SHR 0x19
+// arithmetic shift (sign fill)
+#define OP_SAR 0x1A
+#define OP_SAL 0x1B
 
 // control procedures
-#define OP_CMP 0x0F
-#define OP_JMP 0x10
-#define OP_JE 0x11
-#define OP_JNE 0x12
-#define OP_JG 0x13
-#define OP_JL 0x14
-#define OP_JGE 0x15
-#define OP_JLE 0x15
-#define OP_JA 0x16
-#define OP_JB 0x17
+#define OP_CMP 0x1C
+#define OP_JMP 0x1D
+#define OP_JE  0x1E
+#define OP_JNE 0x1F
+#define OP_JG  0x20
+#define OP_JL  0x21
+#define OP_JGE 0x22
+#define OP_JLE 0x23
+#define OP_JA  0x24
+#define OP_JB  0x25
 
 /* Stack / procedures */
-#define OP_PUSHW   0x30  /* pushes value of ra onto the stack and decreases stack pointer by 2 doesnt change pc */
-#define OP_POPW    0x31  /* pops value from the stack onto ra increases stack pointer by 2 doesnt change pc */
-#define OP_CALL    0x32  /* pushes the current pc onto the stack and then jump to address stored in b2 & b3 , changes pc to jump address*/
-#define OP_RET     0x33  /* pops the address of the calling pc from the stack and jumps to it , changes to pc to caller address */
+#define OP_PUSHW   0x26  /* pushes value of ra onto the stack and decreases stack pointer by 2 doesnt change pc */
+#define OP_POPW    0x27  /* pops value from the stack onto ra increases stack pointer by 2 doesnt change pc */
+#define OP_CALL    0x28  /* pushes the current pc onto the stack and then jump to address stored in b2 & b3 , changes pc to jump address*/
+#define OP_RET     0x29  /* pops the address of the calling pc from the stack and jumps to it , changes to pc to caller address */
 
 /* Output instructions */
-#define OP_OUTC    0x40  /* displays the content of ra as a character*/
+#define OP_OUTC    0x2A  /* displays the content of ra as a character*/
 
 /*stop program execution */
-#define OP_HALT    0x5A
+#define OP_HALT    0x2B
 
 
 
@@ -266,6 +263,8 @@ static instr_t fetch(cpu_t *cpu) {
     in.ra = mem_read8(cpu->pc + 1);
     in.b2 = mem_read8(cpu->pc + 2);
     in.b3 = mem_read8(cpu->pc + 3);
+    in.b4 = mem_read8(cpu->pc + 4);
+    in.b5 = mem_read8(cpu->pc + 5);
     return in;
 }
 // =================
@@ -299,16 +298,14 @@ static void cpu_step(cpu_t *cpu, int debug) {
 
     /* In debug mode, print a simple trace */
     if (debug) {
-        printf("PC=%04X OP=%02X R0=%04X R1=%04X R2=%04X R3=%04X ZF=%u SP=%04X\n",
-               cpu->pc, in.op, cpu->r[0], cpu->r[1], cpu->r[2], cpu->r[3], cpu->zf, cpu->sp);
+        printf("PC=%04X OP=%02X decR0=%d R0=%04X R1=%04X R2=%04X R3=%04X ZF=%u SP=%04X\n",
+               cpu->pc, in.op,cpu->r[0], cpu->r[0], cpu->r[1], cpu->r[2], cpu->r[3], cpu->zf, cpu->sp);
     }
 
     uint16_t mem_addr;
-    // implements the opcodes defined in "INSTRUCTION OPCODES SECTION"
     switch (in.op) {
 
         // REGISTER TO REGISTER MOV
-
         case OP_RRMOVB:
             check_reg(in.ra);
             check_reg(in.b3);
@@ -331,7 +328,6 @@ static void cpu_step(cpu_t *cpu, int debug) {
             break;
 
         // IMMEDIATE TO REGISTER MOV
-
         case OP_IRMOVB:
             check_reg(in.ra);
             cpu->r[in.ra] = (u_int32_t) in.b2;
@@ -463,6 +459,7 @@ static void cpu_step(cpu_t *cpu, int debug) {
             cpu->r[in.ra] = cpu->r[in.ra] | val_or;
             set_zf(in.ra, cpu);
             cpu->pc += 6;
+            break;
 
         case OP_ROR:
             check_reg(in.ra);
@@ -556,14 +553,14 @@ static void cpu_step(cpu_t *cpu, int debug) {
                 check_reg(in.ra);
                 cpu->sp -= 2;
                 mem_write16(cpu->sp, cpu->r[in.ra]);
-                cpu->pc += 4;
+                cpu->pc += 6;
                 break;
         case OP_POPW:
                 check_reg(in.ra);
                 cpu->r[in.ra] = mem_read16(cpu->sp);
                 cpu->sp += 2;
                 cpu->zf = cpu->r[in.ra] == 0;
-                cpu->pc += 4;
+                cpu->pc += 6;
                 break;
         case OP_CALL:
                 cpu->sp -= 2;
