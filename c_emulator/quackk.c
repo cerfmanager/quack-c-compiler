@@ -5,7 +5,6 @@ full emulator rewwrite to implement ncuses cli, signed values
 
 
 TODO:
--negative number support
 -better way to run the program , maybe a gui ?
 -documentation on all the opcodes
 
@@ -100,6 +99,11 @@ TODO: for io maybe implement the output in another way ???
 #define OP_JLE 0x23
 #define OP_JA 0x24
 #define OP_JB 0x25
+
+
+// unary operations
+#define OP_NEG 0x2C
+#define OP_BITCOMP 0x2D
 
 /* Stack / procedures */
 #define OP_PUSHW                                                               \
@@ -441,7 +445,7 @@ static void cpu_step(cpu_t *cpu, int debug) {
     check_reg(in.ra);
     check_reg(in.b2);
     cpu->r[in.b2] = cpu->r[in.ra] & cpu->r[in.b2];
-    set_zf(in.ra, cpu);
+    set_zf(in.b2, cpu);
     cpu->pc += 6;
     break;
 
@@ -457,7 +461,7 @@ static void cpu_step(cpu_t *cpu, int debug) {
     check_reg(in.ra);
     check_reg(in.b2);
     cpu->r[in.b2] = cpu->r[in.ra] | cpu->r[in.b2];
-    set_zf(in.ra, cpu);
+    set_zf(in.b2, cpu);
     cpu->pc += 6;
     break;
 
@@ -473,7 +477,7 @@ static void cpu_step(cpu_t *cpu, int debug) {
     check_reg(in.ra);
     check_reg(in.b2);
     cpu->r[in.b2] = cpu->r[in.ra] ^ cpu->r[in.b2];
-    set_zf(in.ra, cpu);
+    set_zf(in.b2, cpu);
     cpu->pc += 6;
     break;
 
@@ -616,6 +620,15 @@ static void cpu_step(cpu_t *cpu, int debug) {
     cpu->pc = mem_read16(cpu->sp);
     cpu->sp += 2;
     break;
+
+  case OP_NEG:
+    check_reg(in.ra);
+    cpu->r[in.ra] = -cpu->r[in.ra];
+    break;
+  case OP_BITCOMP:
+    check_reg(in.ra);
+    cpu->r[in.ra] = ~cpu->r[in.ra];
+
 
   default:
     char msg[30];

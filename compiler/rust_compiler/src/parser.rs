@@ -1,4 +1,7 @@
-use crate::lexer::Tokens;
+use crate::{
+    lexer::Tokens::{self},
+    parser::UnaryOperator::{Complement, Negate},
+};
 
 pub enum Expression {
     Constant(i64),
@@ -64,10 +67,20 @@ pub fn parse_exp(tokens: &mut Vec<Tokens>) -> Expression {
     // }
 
     match peep_token(tokens) {
-        Tokens::CloseParenthesis => {
+        Tokens::OpenParenthesis => {
             let exp_val = parse_exp(tokens);
             expect(Tokens::CloseParenthesis, tokens);
             return exp_val;
+        }
+        Tokens::BitWiseComp => {
+            let exp_val = parse_exp(tokens);
+            let val = Expression::Unary(Complement, Box::new(exp_val));
+            return val;
+        }
+        Tokens::Negation => {
+            let exp_val = parse_exp(tokens);
+            let val = Expression::Unary(Negate, Box::new(exp_val));
+            return val;
         }
         _ => {
             let val = expect(Tokens::Constant(0), tokens);

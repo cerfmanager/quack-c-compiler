@@ -47,6 +47,8 @@ hexmap = {
     "ret": 0x29,
     "outc": 0x2A,
     "halt": 0x2B,
+    "neg": 0x2C,
+    "bitcomp": 0x2D,
 }
 
 # NOTE:OP_OUTC is defined but doesnt work
@@ -166,9 +168,12 @@ def readASMFile():
                         b4 = (value >> 16) & 0xFF
                         b5 = (value >> 24) & 0xFF
 
-                    case "shl" | "shr" | "sar" | "sal":
-                        amount = imm(parts[2])
+                    case "neg" | "bitcomp":
                         ra = reg(parts[1])
+
+                    case "shl" | "shr" | "sar" | "sal":
+                        amount = imm(parts[1])
+                        ra = reg(parts[2])
                         b2 = amount & 0xFF
                         b3 = (amount >> 8) & 0xFF
                         b4 = (amount >> 16) & 0xFF
