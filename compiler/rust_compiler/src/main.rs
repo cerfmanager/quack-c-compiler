@@ -1,5 +1,6 @@
-mod avt_asm;
 mod code_emitter;
+mod icbm;
+mod icbm_asm;
 mod lexer;
 mod parser;
 use std::env;
@@ -16,7 +17,7 @@ fn main() {
     println!("tokens lexed");
     let parsed = parser::parse_program(&mut lexed);
     println!("tokens parsed");
-    let asm_tree = avt_asm::parse_program(parsed);
+    let asm_tree = icbm_asm::parse_program(parsed);
     println!("tree made into asm");
     code_emitter::asm_to_quack(asm_tree, output_path);
     println!("code Emitted");

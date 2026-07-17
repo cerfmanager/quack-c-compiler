@@ -26,10 +26,10 @@ fn emit_instruction(instruction: &avt_asm::Instructions, lines: &mut Vec<String>
             };
             match src {
                 avt_asm::Expression::Immediate(v) => {
-                    lines.push(format!("    irmovw ${}, {}\n", v, dst_str));
+                    lines.push(format!("    irmovd ${}, {}\n", v, dst_str));
                 }
                 avt_asm::Expression::Register(r) => {
-                    lines.push(format!("    rrmovw {}, {}\n", r, dst_str));
+                    lines.push(format!("    rrmovd {}, {}\n", r, dst_str));
                 }
             }
         }
@@ -39,13 +39,19 @@ fn emit_instruction(instruction: &avt_asm::Instructions, lines: &mut Vec<String>
 
         avt_asm::Instructions::Comp { val } => match val {
             avt_asm::Expression::Register(v) => {
-                lines.push(format!("    two {}\n", v));
+                lines.push(format!("    bitcomp {}\n", v));
             }
             _ => panic!("bitwise should not be used on immidiates "),
         },
         avt_asm::Instructions::Neg { val } => match val {
             avt_asm::Expression::Register(v) => {
                 lines.push(format!("    neg {}\n", v));
+            }
+            _ => panic!("bitwise should not be used on immidiates "),
+        },
+        avt_asm::Instructions::Dec { val } => match val {
+            avt_asm::Expression::Register(v) => {
+                lines.push(format!("    dec {}\n", v));
             }
             _ => panic!("bitwise should not be used on immidiates "),
         },

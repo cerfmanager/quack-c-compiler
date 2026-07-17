@@ -6,8 +6,7 @@ TODO: either rewrite this in rust or add rewrite the c to include
 -negative number support
 -better way to run the program , maybe a gui ?
 -state of memory and all the registers
--add more registers
--larger number support ?
+
 
 =================================
 QuackQuack — Build a Tiny Computer in C

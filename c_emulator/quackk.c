@@ -600,25 +600,25 @@ static void cpu_step(cpu_t *cpu, int debug) {
     break;
   case OP_PUSHW:
     check_reg(in.ra);
-    cpu->sp -= 2;
-    mem_write16(cpu->sp, cpu->r[in.ra]);
+    cpu->sp -= 4;
+    mem_write32(cpu->sp, cpu->r[in.ra]);
     cpu->pc += 6;
     break;
   case OP_POPW:
     check_reg(in.ra);
-    cpu->r[in.ra] = mem_read16(cpu->sp);
-    cpu->sp += 2;
+    cpu->r[in.ra] = mem_read32(cpu->sp);
+    cpu->sp += 4;
     cpu->zf = cpu->r[in.ra] == 0;
     cpu->pc += 6;
     break;
   case OP_CALL:
-    cpu->sp -= 2;
+    cpu->sp -= 4;
     mem_write16(cpu->sp, cpu->pc + 4);
     cpu->pc = u16_from_le(in.b2, in.b3);
     break;
   case OP_RET:
     cpu->pc = mem_read16(cpu->sp);
-    cpu->sp += 2;
+    cpu->sp += 4;
     break;
 
   case OP_NEG:

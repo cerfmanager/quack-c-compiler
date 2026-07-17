@@ -4,6 +4,7 @@ use crate::parser;
 pub enum Instructions {
     Mov { src: Expression, dst: Expression },
     Ret,
+    Dec { val: Expression },
     Neg { val: Expression },
     Comp { val: Expression },
 }
@@ -65,6 +66,7 @@ fn parse_expression(expr: parser::Expression, list: &mut Vec<Instructions>) {
             let mov = parse_mov(immediate, register);
             list.push(mov);
         }
+
         parser::Expression::Unary(operator, exp) => {
             parse_expression(*exp, list);
 
@@ -80,6 +82,13 @@ fn parse_expression(expr: parser::Expression, list: &mut Vec<Instructions>) {
                         val: parse_register("r0"),
                     };
                     list.push(neg);
+                }
+
+                parser::UnaryOperator::Decrement => {
+                    let dec = Instructions::Dec {
+                        val: parse_register("r0"),
+                    };
+                    list.push(dec);
                 }
             }
         }

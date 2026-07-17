@@ -1,6 +1,6 @@
 use crate::{
     lexer::Tokens::{self},
-    parser::UnaryOperator::{Complement, Negate},
+    parser::UnaryOperator::{Complement, Decrement, Negate},
 };
 
 pub enum Expression {
@@ -11,6 +11,7 @@ pub enum Expression {
 pub enum UnaryOperator {
     Complement,
     Negate,
+    Decrement,
 }
 
 pub enum Statement {
@@ -72,6 +73,12 @@ pub fn parse_exp(tokens: &mut Vec<Tokens>) -> Expression {
             expect(Tokens::CloseParenthesis, tokens);
             return exp_val;
         }
+        Tokens::Decrement => {
+            let exp_val = parse_exp(tokens);
+            let val = Expression::Unary(Decrement, Box::new(exp_val));
+            return val;
+        }
+
         Tokens::BitWiseComp => {
             let exp_val = parse_exp(tokens);
             let val = Expression::Unary(Complement, Box::new(exp_val));
