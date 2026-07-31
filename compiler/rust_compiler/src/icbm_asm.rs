@@ -130,3 +130,11 @@ pub fn convert_op(op: icbm::Unary_Operator) -> Unary_Operator {
         }
     };
 }
+
+
+
+
+
+pub fn replace_pseudo(instructions : &mut Vec<Instructions>) -> Vec<Instructions> {
+    
+}

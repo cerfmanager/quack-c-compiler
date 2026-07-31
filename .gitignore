@@ -1,3 +1,5 @@
 /target
 
 /compiler/__pycache__
+
+.idea

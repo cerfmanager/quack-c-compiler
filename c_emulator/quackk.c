@@ -71,6 +71,10 @@ TODO: for io maybe implement the output in another way ???
 #define OP_DEC 0x10
 #define OP_CLR 0x11
 
+
+
+//TODO:: implement floating point number operations for float registers
+
 // logical
 #define OP_RAND 0x12
 #define OP_ROR 0x13
@@ -131,6 +135,7 @@ typedef struct {
   uint16_t pc;   /* program counter (address of next instruction) */
   uint16_t sp;   /* stack pointer */
   uint32_t r[6]; /* R0..R5 */
+  uint32_t x[6];
   uint8_t zf;    /* zero flag */
   uint8_t cf;    // carry flag(unsigned)
   uint8_t of;    // overflow flag(signed)
