@@ -42,18 +42,35 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
                 },
 
                 icbm_asm::Operand::Stack(offset) => match dst {
-                    icbm_asm::Operand::Reg(d_reg) => {}
+                    icbm_asm::Operand::Reg(d_reg) => {
+                        let final_offset = -offset;
+                        let reg = register_to_string(*d_reg);
+                        lines.push(format!("irmovd ${final_offset} r5"));
+                        lines.push(format!("rrmovd r6 r4"));
+                        lines.push(format!("sub r5 r4"));
+                        lines.push(format!("rmrmovd r4 {reg}"))
+                    }
 
-                    icbm_asm::Operand::Stack(d_off) => {}
                     _ => {
-                        panic!("dst cannot be and imm")
+                        panic!("dst cannot be and imm or another stack offset")
                     }
                 },
 
                 icbm_asm::Operand::Reg(reg) => match dst {
-                    icbm_asm::Operand::Reg(d_reg) => {}
+                    icbm_asm::Operand::Reg(d_reg) => {
+                        let s_reg = register_to_string(*reg);
+                        let d_reg = register_to_string(*d_reg);
+                        lines.push(format!("rrmovd {s_reg} {d_reg}"))
+                    }
 
-                    icbm_asm::Operand::Stack(d_off) => {}
+                    icbm_asm::Operand::Stack(d_off) => {
+                        let s_reg = register_to_string(*reg);
+                        let final_offset = -d_off;
+                        lines.push(format!("irmovd ${final_offset} r5"));
+                        lines.push(format!("rrmovd r6 r4"));
+                        lines.push(format!("sub r5 r4"));
+                        lines.push(format!("rrmmovd {s_reg} r4"))
+                    }
                     _ => {
                         panic!("dst cannot be and imm")
                     }
