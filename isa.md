@@ -1,6 +1,6 @@
 # QuackQuack ISA Reference
 
-This documents every opcode currently defined in `quackk.c`, what it does, how it's encoded, and how to write it in `quassembler.py` syntax. It reflects the emulator's actual behavior, not just the intent in the comments — a few places where those disagree are called out explicitly.
+Complete documentation of every opcode in `quackk.c`. This reference reflects the **actual emulator behavior** — discrepancies between documentation and implementation are called out explicitly.
 
 ## Instruction format
 
@@ -12,33 +12,25 @@ field: op   ra   b2   b3   b4   b5
 ```
 
 - **op** — the opcode (see table below)
-- **ra** — almost always a register index; meaning depends on the instruction
+- **ra** — almost always a register index; exact meaning depends on the instruction
 - **b2, b3, b4, b5** — operand bytes. For 16-bit values they hold `lo, hi`. For 32-bit values they hold all four bytes little-endian (`b2`=byte 0 ... `b5`=byte 3).
 
-`pc` always advances by 6 after a non-branching instruction. Branches/calls overwrite `pc` directly with an absolute 16-bit address built from `b2` (low) and `b3` (high) — there's no relative addressing.
+Non-branching instructions advance `pc` by 6. Branches and calls overwrite `pc` with an absolute 16-bit address built from `b2` (low) and `b3` (high) — no relative addressing.
 
 ## Registers and flags
 
-- 6 general-purpose 32-bit registers: `R0`–`R5`. Any instruction touching a register calls `check_reg`, which halts the program if the index is outside `0..5`.
-- 4 single-bit flags on the CPU: `ZF` (zero), `SF` (sign), `OF` (overflow), `CF` (carry). `CMP` is the main place these get set deliberately; a few arithmetic/logical ops also update `ZF` as a side effect (noted per-instruction below).
+- 6 general-purpose 32-bit registers: `R0`–`R5`. Any instruction touching a register calls `check_reg`, halting if the index is outside `0..5`.
+- 4 single-bit flags: `ZF` (zero), `SF` (sign), `OF` (overflow), `CF` (carry). Primarily set by `CMP`; some arithmetic/logical ops also update `ZF` (noted per-instruction).
 - `sp` starts at `0x2000` and grows downward as you `PUSHW`.
 
 ## Opcode table
 
 | Mnemonic | Opcode | Category |
 |---|---|---|
-| `rrmovb` | `0x01` | Register move |
-| `rrmovw` | `0x02` | Register move |
-| `rrmovd` | `0x03` | Register move |
-| `irmovb` | `0x04` | Immediate load |
-| `irmovw` | `0x05` | Immediate load |
-| `irmovd` | `0x06` | Immediate load |
-| `mrmovb` | `0x07` | Memory load |
-| `mrmovw` | `0x08` | Memory load |
-| `mrmovd` | `0x09` | Memory load |
-| `rmmovb` | `0x0A` | Memory store |
-| `rmmovw` | `0x0B` | Memory store |
-| `rmmovd` | `0x0C` | Memory store |
+| `rrmovb` / `rrmovw` / `rrmovd` | `0x01` / `0x02` / `0x03` | Register move |
+| `irmovb` / `irmovw` / `irmovd` | `0x04` / `0x05` / `0x06` | Immediate load |
+| `mrmovb` / `mrmovw` / `mrmovd` | `0x07` / `0x08` / `0x09` | Memory load |
+| `rmmovb` / `rmmovw` / `rmmovd` | `0x0A` / `0x0B` / `0x0C` | Memory store |
 | `add` | `0x0D` | Arithmetic |
 | `sub` | `0x0E` | Arithmetic |
 | `inc` | `0x0F` | Arithmetic |
@@ -64,12 +56,14 @@ field: op   ra   b2   b3   b4   b5
 | `jle` | `0x23` | Control flow |
 | `ja` | `0x24` | Control flow |
 | `jb` | `0x25` | Control flow |
-| `pushw` | `0x26` | Stack/procedure |
-| `popw` | `0x27` | Stack/procedure |
-| `call` | `0x28` | Stack/procedure |
-| `ret` | `0x29` | Stack/procedure |
+| `pushw` | `0x26` | Stack |
+| `popw` | `0x27` | Stack |
+| `call` | `0x28` | Stack |
+| `ret` | `0x29` | Stack |
 | `outc` | `0x2A` | Output |
 | `halt` | `0x2B` | Control |
+| `neg` | `0x2C` | Unary arithmetic |
+| `bitcomp` | `0x2D` | Unary logical |
 
 ---
 
@@ -81,9 +75,11 @@ field: op   ra   b2   b3   b4   b5
 rrmovw rSRC, rDST
 ```
 
-Copies one register's value into another: `R[ra] = R[b3]`. `ra` is the **destination**, `b3` is the **source** — the operand order is reversed from how you'd guess by reading left to right in the byte layout.
+Copies one register into another: `R[ra] = R[b3]`. 
+- **ra** is the destination
+- **b3** is the source (operand order is reversed from syntax)
 
-**Current behavior to be aware of:** all three variants (`B`/`W`/`D`) execute identically — each one moves the *entire* 32-bit register, regardless of suffix. The byte/word size distinction that `IRMOV`/`MRMOV`/`RMMOV` honor isn't implemented here yet.
+**⚠️ Implementation note:** All three variants (`B`/`W`/`D`) execute identically — each moves the *entire* 32-bit register, regardless of suffix. Byte/word size distinction is not implemented.
 
 No flags affected.
 
@@ -97,7 +93,7 @@ No flags affected.
 irmovb $imm, rDST
 ```
 
-`R[ra] = b2` (zero-extended). Immediate is a single byte, so values are truncated to `0..255`.
+`R[ra] = b2` (zero-extended). Immediate is a single byte (`0..255`).
 
 ### `IRMOVW` — `0x05`
 
@@ -105,7 +101,7 @@ irmovb $imm, rDST
 irmovw $imm, rDST
 ```
 
-`R[ra] = (b3 << 8) | b2`. 16-bit immediate, zero-extended into the 32-bit register.
+`R[ra] = (b3 << 8) | b2`. 16-bit immediate, zero-extended to 32-bit.
 
 ### `IRMOVD` — `0x06`
 
@@ -113,7 +109,7 @@ irmovw $imm, rDST
 irmovd $imm, rDST
 ```
 
-`R[ra] = b5:b4:b3:b2` (little-endian). Full 32-bit immediate — the only load that can put an arbitrary 32-bit pattern (including negative numbers, as their two's-complement bit pattern) directly into a register.
+`R[ra] = b5:b4:b3:b2` (little-endian). Full 32-bit immediate — the only load supporting arbitrary bit patterns including negative numbers as two's-complement.
 
 No flags affected by any `IRMOV*` variant.
 
@@ -129,9 +125,14 @@ mrmovw $addr, rDST
 mrmovd $addr, rDST
 ```
 
-Reads from memory into a register: `R[ra] = mem[addr]`, where `addr` comes from `b2`/`b3` (low/high byte of a 16-bit address — `b4`/`b5` are present in the encoding but get truncated away since memory addresses are 16-bit). `B` reads 1 byte, `W` reads 2 bytes (little-endian), `D` reads 4 bytes (little-endian) — these *do* differ correctly by width, unlike `RRMOV`.
+Read from memory into a register: `R[ra] = mem[addr]`. Address comes from `b2`/`b3` (low/high of 16-bit address; `b4`/`b5` present but unused).
+- **B** reads 1 byte
+- **W** reads 2 bytes (little-endian)
+- **D** reads 4 bytes (little-endian)
 
-Bounds-checked against `MEM_SIZE` (8192); an out-of-range address halts the program with a memory error.
+These variants *do* differ correctly by width, unlike `RRMOV`.
+
+Bounds-checked against `MEM_SIZE` (8192); out-of-range address halts with memory error.
 
 No flags affected.
 
@@ -147,7 +148,7 @@ rmmovw $addr, rSRC
 rmmovd $addr, rSRC
 ```
 
-Writes a register out to memory: `mem[addr] = R[ra]`, truncated to 1/2/4 bytes depending on variant. Same address encoding as the `MRMOV` family.
+Write from register to memory: `mem[addr] = R[ra]`, truncated to 1/2/4 bytes per variant. Same address encoding as `MRMOV`.
 
 No flags affected.
 
@@ -155,107 +156,123 @@ No flags affected.
 
 ## Arithmetic
 
-### `ADD` (`add`) — `0x0D`
+### `ADD` — `0x0D`
 
 ```asm
 add rSRC, rDST
 ```
 
-`R[b2] += R[ra]`. Note the destination is the **second** operand, not the first. Sets `ZF` based on whether the destination ended up zero.
+`R[b2] += R[ra]`. **Destination is the second operand** (not first). Sets `ZF` based on whether destination result is zero.
 
-### `SUB` (`sub`) — `0x0E`
+### `SUB` — `0x0E`
 
 ```asm
-subw rSRC, rDST
+sub rSRC, rDST
 ```
 
-`R[b2] -= R[ra]`. Same operand order as `ADD`. Sets `ZF` on the destination's result.
+`R[b2] -= R[ra]`. Same operand order as `ADD`. Sets `ZF` on destination result.
 
-### `INC` (`inc`) — `0x0F`
+### `INC` — `0x0F`
 
 ```asm
-incw rX
+inc rX
 ```
 
 `R[ra]++`. No flags affected.
 
-### `DEC` (`dec`) — `0x10`
+### `DEC` — `0x10`
 
 ```asm
-decw rX
+dec rX
 ```
 
 `R[ra]--`. No flags affected.
 
-### `CLR` (`clrw`) — `0x11`
+### `CLR` — `0x11`
 
 ```asm
-clrw rX
+clr rX
 ```
 
 `R[ra] = 0`. No flags affected.
+
+### `NEG` — `0x2C`
+
+```asm
+neg rX
+```
+
+`R[ra] = -R[ra]` (two's-complement negation). No flags affected.
 
 ---
 
 ## Logical operations
 
-There are two families here: register-register (`RAND`/`ROR`/`RXOR`) and register-immediate (`IAND`/`IOR`/`IXOR`).
+Two families: register-register (`RAND`/`ROR`/`RXOR`) and register-immediate (`IAND`/`IOR`/`IXOR`).
 
-### `RAND` (`rand`) — `0x12`
+### `RAND` — `0x12`
 
 ```asm
 rand rSRC, rDST
 ```
 
-`R[b2] = R[ra] & R[b2]`. Sets `ZF`, but based on `R[ra]` (the source), not the destination that actually changed — worth knowing if you're relying on the flag.
+`R[b2] = R[ra] & R[b2]`. Sets `ZF` based on the **destination** result.
 
-### `ROR` (`ror`) — `0x13`
+### `ROR` — `0x13`
 
 ```asm
 ror rSRC, rDST
 ```
 
-`R[b2] = R[ra] | R[b2]`. Same `ZF`-on-source quirk as `RAND`. (Despite the name, this is bitwise OR, not "rotate".)
+`R[b2] = R[ra] | R[b2]`. Sets `ZF` based on destination result. (Despite the name, this is bitwise OR, not rotate.)
 
-### `RXOR` (`rxor`) — `0x14`
+### `RXOR` — `0x14`
 
 ```asm
 rxor rSRC, rDST
 ```
 
-`R[b2] = R[ra] ^ R[b2]`. Same `ZF`-on-source quirk.
+`R[b2] = R[ra] ^ R[b2]`. Sets `ZF` based on destination result.
 
-### `IAND` (`iand`) — `0x15`
+### `IAND` — `0x15`
 
 ```asm
 iand $imm, rX
 ```
 
-`R[ra] = R[ra] & imm`, where `imm` is the full 32-bit value from `b2..b5`. Sets `ZF` based on the (correct, in this case) destination register `ra`.
+`R[ra] = R[ra] & imm` (32-bit immediate from `b2..b5`). Sets `ZF` based on destination result.
 
-### `IOR` (`ior`) — `0x16`
+### `IOR` — `0x16`
 
 ```asm
 ior $imm, rX
 ```
 
-`R[ra] = R[ra] | imm`. Sets `ZF` on `ra`.
+`R[ra] = R[ra] | imm`. Sets `ZF` based on destination result.
 
-### `IXOR` (`ixor`) — `0x17`
+### `IXOR` — `0x17`
 
 ```asm
 ixor $imm, rX
 ```
 
-`R[ra] = R[ra] ^ imm`. Sets `ZF` on `ra`.
+`R[ra] = R[ra] ^ imm`. Sets `ZF` based on destination result.
+
+### `BITCOMP` — `0x2D`
+
+```asm
+bitcomp rX
+```
+
+`R[ra] = ~R[ra]` (bitwise complement). No flags affected.
 
 ---
 
 ## Shifts
 
-All four take a 32-bit shift amount from `b2..b5`, same encoding as the immediate logical ops.
+All take a 32-bit shift amount from `b2..b5`.
 
-### `SHL` (`shl`) — `0x18`
+### `SHL` — `0x18`
 
 ```asm
 shl $amount, rX
@@ -263,190 +280,238 @@ shl $amount, rX
 
 `R[ra] <<= amount`. Logical left shift, zero-fills from the right.
 
-### `SHR` (`shr`) — `0x19`
+### `SHR` — `0x19`
 
 ```asm
 shr $amount, rX
 ```
 
-`R[ra] >>= amount`, as an **unsigned** shift (zero-fills from the left) — `R[ra]` is treated as `uint32_t` here, so this is correct for unsigned values but will not sign-extend negative ones.
+`R[ra] >>= amount` as **unsigned** (zero-fills from left). `R[ra]` treated as `uint32_t`.
 
-### `SAR` (`sar`) — `0x1A`
+### `SAR` — `0x1A`
 
 ```asm
 sar $amount, rX
 ```
 
-Arithmetic right shift: the register is reinterpreted as `int32_t` before shifting, so the sign bit is preserved (sign-extends from the left). Correct two's-complement arithmetic shift, distinct from `SHR`.
+Arithmetic right shift: `R[ra]` reinterpreted as `int32_t` before shifting, preserving the sign bit. Correct two's-complement behavior, distinct from `SHR`.
 
-### `SAL` (`sal`) — `0x1B`
+### `SAL` — `0x1B`
 
 ```asm
 sal $amount, rX
 ```
 
-`R[ra] <<= amount`. **Currently identical to `SHL`** — there's no separate arithmetic-left-shift logic (left shifts don't need sign-extension the way right shifts do, so as written this isn't a bug so much as a redundant opcode, but it's worth knowing `SAL` and `SHL` aren't doing anything different from each other yet).
+`R[ra] <<= amount`. **Currently identical to `SHL`** — no separate arithmetic-left-shift logic (left shifts don't require sign-extension). Redundant opcode but harmless.
 
-None of the shift ops affect any flags.
+No shift operations affect flags.
 
 ---
 
 ## Control flow
 
-### `CMP` (`cmp`) — `0x1C`
+### `CMP` — `0x1C`
 
 ```asm
 cmp rA, rB
 ```
 
-Computes `R[ra] - R[b2]` (as unsigned 32-bit subtraction) purely to set flags — it doesn't write the result anywhere. This is the instruction every conditional jump below depends on:
+Computes `R[ra] - R[b2]` (unsigned 32-bit subtraction) **for flags only** — result is discarded. Sets:
 
-- `ZF` = 1 if the values are equal
-- `SF` = the sign bit of the subtraction result
-- `CF` = 1 if `R[ra] < R[b2]` as **unsigned** values (i.e. a borrow occurred)
-- `OF` = 1 if the subtraction overflowed as a **signed** 32-bit operation
+- `ZF = 1` if values equal
+- `SF` = sign bit of subtraction result
+- `CF = 1` if `R[ra] < R[b2]` as unsigned (borrow occurred)
+- `OF = 1` if subtraction overflowed as signed 32-bit operation
 
-Always run `cmpw` immediately before the conditional jump that depends on it — nothing else sets these four flags together as a coherent group (though see the side-effect notes on `ADD`/`SUB`/`IAND` etc. above, which only ever touch `ZF`).
+**Always precede conditional jumps with `cmp`.** Nothing else sets all four flags coherently; arithmetic ops only touch `ZF`.
 
-### `JMP` (`jmp`) — `0x1D`
+### `JMP` — `0x1D`
 
 ```asm
 jmp label
 ```
 
-Unconditional: `pc = addr`. No flags read.
+Unconditional jump: `pc = addr`. No flags read.
 
-### `JE` (`je`) — `0x1E`
+### `JE` — `0x1E`
 
 ```asm
 je label
 ```
 
-Jumps if `ZF == 1` (i.e. the last `cmpw` found the two operands equal).
+Jump if `ZF == 1` (operands equal after most recent `cmp`).
 
-### `JNE` (`jne`) — `0x1F`
+### `JNE` — `0x1F`
 
 ```asm
 jne label
 ```
 
-Jumps if `ZF == 0`.
+Jump if `ZF == 0`.
 
-### `JG` (`jg`) — `0x20`
+### `JG` — `0x20`
 
 ```asm
 jg label
 ```
 
-**Signed** "greater than": jumps if `ZF == 0 && SF == OF`. This is why `CMP` needs `OF` — a naive sign-bit check breaks across signed overflow (e.g. comparing `INT32_MAX` against `-1`), and `SF == OF` corrects for that.
+**Signed** greater-than: jump if `ZF == 0 && SF == OF`. The `OF` correction handles overflow cases (e.g., `INT32_MAX` vs `-1`).
 
-### `JL` (`jl`) — `0x21`
+### `JL` — `0x21`
 
 ```asm
 jl label
 ```
 
-**Signed** "less than": jumps if `SF != OF`.
+**Signed** less-than: jump if `SF != OF`.
 
-### `JGE` (`jge`) — `0x22`
+### `JGE` — `0x22`
 
 ```asm
 jge label
 ```
 
-**Signed** "greater than or equal": jumps if `SF == OF`.
+**Signed** greater-than-or-equal: jump if `SF == OF`.
 
-### `JLE` (`jle`) — `0x23`
+### `JLE` — `0x23`
 
 ```asm
 jle label
 ```
 
-**Signed** "less than or equal": jumps if `ZF == 1 || SF != OF`.
+**Signed** less-than-or-equal: jump if `ZF == 1 || SF != OF`.
 
-### `JA` (`ja`) — `0x24`
+### `JA` — `0x24`
 
 ```asm
 ja label
 ```
 
-**Unsigned** "above": jumps if `CF == 0 && ZF == 0`.
+**Unsigned** above: jump if `CF == 0 && ZF == 0`.
 
-### `JB` (`jb`) — `0x25`
+### `JB` — `0x25`
 
 ```asm
 jb label
 ```
 
-**Unsigned** "below": jumps if `CF == 1`.
+**Unsigned** below: jump if `CF == 1`.
 
-> The signed (`JG`/`JL`/`JGE`/`JLE`) and unsigned (`JA`/`JB`) families read the same flags from the same `cmpw`, but answer different questions about the same bit pattern — see `SF`/`OF` vs `CF` above. There's no `JAE`/`JBE` (unsigned ≥/≤) defined yet, even though the flag logic for them is a one-line addition (`!CF` and `CF || ZF` respectively) if you need them.
+**Note:** Signed (`JG`/`JL`/`JGE`/`JLE`) and unsigned (`JA`/`JB`) families read the same flags but answer different questions about the bit pattern. No `JAE`/`JBE` (unsigned ≥/≤) defined yet; would need `!CF` and `CF || ZF` respectively.
 
 ---
 
 ## Stack and procedures
 
-The stack starts at `sp = 0x2000` and grows downward (each push decrements `sp` by 2, each pop increments it by 2). It's word-based (16-bit) — pushing/popping always moves exactly 2 bytes, regardless of register width.
+The stack starts at `sp = 0x2000` and grows downward. Operations are **word-based (16-bit values pushed/popped)**, but the implementation actually uses **32-bit operations**. Each push decrements `sp` by 4; each pop increments `sp` by 4.
 
-### `PUSHW` (`pushw`) — `0x26`
+**⚠️ Important discrepancy:** Documentation claimed word-based (2 bytes), but implementation uses 4-byte moves. This means stack frames are 32-bit, not 16-bit.
+
+### `PUSHW` — `0x26`
 
 ```asm
 pushw rX
 ```
 
-`sp -= 2; mem[sp] = R[ra]` (low 16 bits only — pushing a register with a value above `0xFFFF` will truncate it on the way to the stack).
+```
+sp -= 4
+mem[sp] = R[ra] (32-bit write)
+```
 
-### `POPW` (`popw`) — `0x27`
+Pushes the full 32-bit register value. `pc` advances normally (+6).
+
+### `POPW` — `0x27`
 
 ```asm
 popw rX
 ```
 
-`R[ra] = mem[sp]; sp += 2`. Also sets `ZF` based on whether the popped value was zero.
+```
+R[ra] = mem[sp] (32-bit read)
+sp += 4
+```
 
-### `CALL` (`call`) — `0x28`
+Pops 32 bits into register. Sets `ZF` based on whether popped value was zero. `pc` advances normally (+6).
+
+### `CALL` — `0x28`
 
 ```asm
 call label
 ```
 
-Pushes the return address (`pc + 6`, i.e. the instruction right after this `call`) onto the stack, then jumps: `pc = addr`.
+```
+sp -= 4
+mem[sp] = pc + 4  (return address: 16-bit write of next instruction address)
+pc = addr
+```
 
-### `RET` (`ret`) — `0x29`
+**⚠️ Implementation note:** Return address written is `pc + 4`, not `pc + 6`. This is a bug — should be `pc + 6` to point to the instruction after the `call`. Only 16 bits written despite 32-bit stack slots.
+
+### `RET` — `0x29`
 
 ```asm
 ret
 ```
 
-Pops a 16-bit address off the stack into `pc`. No operands.
+```
+pc = mem[sp] (16-bit read)
+sp += 4
+```
+
+Pops return address from stack. No operands. Increments `sp` by 4 even though only 16 bits read — leaves 16-bit gap on stack (mismatched with `CALL`'s 16-bit write).
+
+**⚠️ Stack alignment bug:** `CALL` writes 16 bits; `RET` increments by 4. `PUSHW`/`POPW` use 4-byte operations. This causes stack misalignment. Likely needs refactor to be consistent (either all 16-bit or all 32-bit).
 
 ---
 
 ## Output
 
-### `OUTC` (`outc`) — `0x2A`
+### `OUTC` — `0x2A`
 
 ```asm
 outc rX
 ```
 
-**Not yet implemented.** The opcode is reserved and the assembler will happily encode it, but `cpu_step`'s switch has no case for it — executing it currently hits `die("unknown opcode")`. Intended behavior (per the `#define` comment) is to print the low byte of `R[ra]` as an ASCII character.
+**Not yet implemented.** Opcode is reserved and assembler encodes it, but `cpu_step` has no case — executing it calls `die("unknown opcode")`. Intended: print low byte of `R[ra]` as ASCII character.
 
 ---
 
 ## Halt
 
-### `HALT` (`halt`) — `0x2B`
+### `HALT` — `0x2B`
 
 ```asm
 halt
 ```
 
-Sets `cpu->halted = 1`. The run loop stops calling `cpu_step` once this is set; `pc` is left pointing at the `HALT` instruction itself (it's the only opcode that doesn't advance `pc`).
+Sets `cpu->halted = 1`. The run loop stops; `pc` stays pointing at the `HALT` instruction (only opcode that doesn't advance `pc`).
 
 ---
 
-## Known gaps, for when you get to them
+## Known issues and gaps
 
-- `OUTC` has no execution logic yet (see above).
-- No `JAE`/`JBE` (unsigned ≥/≤), even though `JGE`/`JLE` exist for the signed side.
+### Bugs/inconsistencies in current implementation
+
+1. **Stack width mismatch:** `PUSHW`/`POPW` use 32-bit operations, but `CALL` writes 16-bit return address and `RET` reads 16-bit. Leaves 16-bit uninitialized gap on stack.
+2. **CALL return address off by 2:** Writes `pc + 4` instead of `pc + 6`.
+3. **RRMOV* width ignored:** All three variants move full 32-bit register regardless of suffix.
+4. **OUTC unimplemented:** Has opcode but no execution.
+
+### Unimplemented features
+
+- **Floating-point:** No float registers or operations.
+- **JAE/JBE:** Unsigned ≥/≤ jumps (only have JA, JB, JGE, JLE).
+- **Shift by register:** All shifts require immediate 32-bit amount; can't shift by register value.
+- **I/O:** `OUTC` reserved but no input mechanism.
+
+---
+
+## Assembly syntax notes
+
+- **Register operands:** `rX` where X ∈ {0..5}
+- **Immediates:** `$value` (decimal or hex `0x...`)
+- **Memory addresses:** `$addr` (same format as immediates)
+- **Labels:** Resolved to 16-bit addresses by assembler
+- **Operand order:** Varies by instruction family — always check syntax above
+  - Arithmetic/logical: `op rSRC, rDST` (destination is often second)
+  - Memory: `op $addr, rX` or `op $imm, rX`

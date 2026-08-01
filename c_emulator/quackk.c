@@ -64,6 +64,13 @@ TODO: for io maybe implement the output in another way ???
 #define OP_RMMOVW 0x0B
 #define OP_RMMOVD 0x0C
 
+#define OP_RMRMOVD 0xAA
+#define OP_RRMMOVD 0xDD
+
+
+
+//TODO: restore register to memory register
+
 // arithemtic
 #define OP_ADD 0x0D
 #define OP_SUB 0x0E
@@ -129,12 +136,17 @@ TODO: for io maybe implement the output in another way ???
 /*stop program execution */
 #define OP_HALT 0x2B
 
+
+
+#define RSP cpu->r[6]
+#define RBP cpu->r[7]
+
+
 static uint8_t memory[MEM_SIZE];
 
 typedef struct {
   uint16_t pc;   /* program counter (address of next instruction) */
-  uint16_t sp;   /* stack pointer */
-  uint32_t r[6]; /* R0..R5 */
+  uint32_t r[8]; /* R0..R5 */
   uint32_t x[6];
   uint8_t zf;    /* zero flag */
   uint8_t cf;    // carry flag(unsigned)
@@ -160,11 +172,11 @@ static uint16_t u16_from_le(uint8_t lo, uint8_t hi) {
   return (uint16_t)(lo | ((uint16_t)hi << 8));
 }
 
-static u_int32_t u32_from_le(uint16_t lo, uint16_t hi) {
+static uint32_t u32_from_le(uint16_t lo, uint16_t hi) {
   return (uint32_t)(lo | ((uint32_t)hi << 16));
 }
 
-static u_int32_t u32_from_u8(uint8_t lo, uint8_t mid1, uint8_t mid2,
+static uint32_t u32_from_u8(uint8_t lo, uint8_t mid1, uint8_t mid2,
                              uint8_t hi) {
   return u32_from_le(u16_from_le(lo, mid1), u16_from_le(mid2, hi));
 }
@@ -336,13 +348,13 @@ static void cpu_step(cpu_t *cpu, int debug) {
   // IMMEDIATE TO REGISTER MOV
   case OP_IRMOVB:
     check_reg(in.ra);
-    cpu->r[in.ra] = (u_int32_t)in.b2;
+    cpu->r[in.ra] = (uint32_t)in.b2;
     cpu->pc += 6;
     break;
 
   case OP_IRMOVW:
     check_reg(in.ra);
-    cpu->r[in.ra] = (u_int32_t)u16_from_le(in.b2, in.b3);
+    cpu->r[in.ra] = (uint32_t)u16_from_le(in.b2, in.b3);
     cpu->pc += 6;
     break;
 
@@ -377,6 +389,8 @@ static void cpu_step(cpu_t *cpu, int debug) {
     cpu->pc += 6;
     break;
 
+
+
   // REGISTER TO MEMORY MOV
   // the memory check is done in the function itself
   case OP_RMMOVB:
@@ -399,6 +413,23 @@ static void cpu_step(cpu_t *cpu, int debug) {
     mem_write32(mem_addr, cpu->r[in.ra]);
     cpu->pc += 6;
     break;
+
+  case OP_RMRMOVD:
+    check_reg(in.ra);
+    check_reg(in.b2);
+    cpu->r[in.ra] = mem_read32(cpu->r[in.b2]);
+    cpu->pc += 6;
+    break;
+
+
+  case OP_RRMMOVD:
+      check_reg(in.ra);
+      check_reg(in.b2);
+      mem_write32(cpu->r[in.b2], cpu->r[in.ra]);
+      cpu->pc += 6;
+      break;
+
+
 
   // ARITHMETIC OPERATIONS
   case OP_ADD:
@@ -439,7 +470,7 @@ static void cpu_step(cpu_t *cpu, int debug) {
 
   case OP_IAND:
     check_reg(in.ra);
-    u_int32_t val_and = u32_from_u8(in.b2, in.b3, in.b4, in.b5);
+    uint32_t val_and = u32_from_u8(in.b2, in.b3, in.b4, in.b5);
     cpu->r[in.ra] = cpu->r[in.ra] & val_and;
     set_zf(in.ra, cpu);
     cpu->pc += 6;
@@ -456,7 +487,7 @@ static void cpu_step(cpu_t *cpu, int debug) {
 
   case OP_IOR:
     check_reg(in.ra);
-    u_int32_t val_or = u32_from_u8(in.b2, in.b3, in.b4, in.b5);
+    uint32_t val_or = u32_from_u8(in.b2, in.b3, in.b4, in.b5);
     cpu->r[in.ra] = cpu->r[in.ra] | val_or;
     set_zf(in.ra, cpu);
     cpu->pc += 6;
@@ -472,7 +503,7 @@ static void cpu_step(cpu_t *cpu, int debug) {
 
   case OP_IXOR:
     check_reg(in.ra);
-    u_int32_t val_xor = u32_from_u8(in.b2, in.b3, in.b4, in.b5);
+    uint32_t val_xor = u32_from_u8(in.b2, in.b3, in.b4, in.b5);
     cpu->r[in.ra] = cpu->r[in.ra] ^ val_xor;
     set_zf(in.ra, cpu);
     cpu->pc += 6;
@@ -605,25 +636,25 @@ static void cpu_step(cpu_t *cpu, int debug) {
     break;
   case OP_PUSHW:
     check_reg(in.ra);
-    cpu->sp -= 4;
-    mem_write32(cpu->sp, cpu->r[in.ra]);
+    RSP -= 4;
+    mem_write32(RSP, cpu->r[in.ra]);
     cpu->pc += 6;
     break;
   case OP_POPW:
     check_reg(in.ra);
-    cpu->r[in.ra] = mem_read32(cpu->sp);
-    cpu->sp += 4;
+    cpu->r[in.ra] = mem_read32(RSP);
+    RSP += 4;
     cpu->zf = cpu->r[in.ra] == 0;
     cpu->pc += 6;
     break;
   case OP_CALL:
-    cpu->sp -= 4;
-    mem_write16(cpu->sp, cpu->pc + 4);
+    RSP -= 4;
+    mem_write16(RSP, cpu->pc + 4);
     cpu->pc = u16_from_le(in.b2, in.b3);
     break;
   case OP_RET:
-    cpu->pc = mem_read16(cpu->sp);
-    cpu->sp += 4;
+    cpu->pc = mem_read16(RSP);
+    RSP += 4;
     break;
 
   case OP_NEG:

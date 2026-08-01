@@ -1,60 +1,74 @@
-use crate::avt_asm;
+use crate::icbm_asm;
+use crate::icbm_asm::Reg::{r0, r3};
 
 use std::fs::File;
 use std::io;
 use std::io::Write;
 
-pub fn asm_to_quack(program: avt_asm::Program, file: &str) {
+pub fn asm_to_quack(program: icbm_asm::Program, file: &str) {
     let mut lines: Vec<String> = Vec::new();
     emit_function(&program.function, &mut lines);
     write_to_file(file, &lines).expect("failed to write to file");
 }
 
-fn emit_function(function: &avt_asm::Function, lines: &mut Vec<String>) {
+fn emit_function(function: &icbm_asm::Function, lines: &mut Vec<String>) {
     lines.push(format!("{}:\n", function.identifier));
     for instruction in &function.body {
         emit_instruction(instruction, lines);
     }
 }
 
-fn emit_instruction(instruction: &avt_asm::Instructions, lines: &mut Vec<String>) {
+fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String>) {
     match instruction {
-        avt_asm::Instructions::Mov { src, dst } => {
-            let dst_str = match dst {
-                avt_asm::Expression::Register(r) => r.clone(),
-                _ => panic!("dst must be a register"),
-            };
+        icbm_asm::Instructions::Mov(src, dst) => {
             match src {
-                avt_asm::Expression::Immediate(v) => {
-                    lines.push(format!("    irmovd ${}, {}\n", v, dst_str));
-                }
-                avt_asm::Expression::Register(r) => {
-                    lines.push(format!("    rrmovd {}, {}\n", r, dst_str));
+                icbm_asm::Operand::Imm(val) => match dst {
+                    icbm_asm::Operand::Reg(d_reg) => {
+                        let reg = register_to_string(*d_reg);
+                        lines.push(format!("irmovd ${val} r{reg}\n"));
+                    }
+
+                    icbm_asm::Operand::Stack(d_off) => {
+                        lines.push(format!("irmovd ${d_off} r3"));
+                        lines.push(format!("rrmovd r5 r2"));
+                        lines.push(format!("sub r3 r2"));
+                        lines.push(format!("immovd ${val} r2"))
+                    }
+
+                    _ => {
+                        panic!("dst cannot be and imm")
+                    }
+                },
+
+                icbm_asm::Operand::Stack(offset) => match dst {
+                    icbm_asm::Operand::Reg(d_reg) => {}
+
+                    icbm_asm::Operand::Stack(d_off) => {}
+                    _ => {
+                        panic!("dst cannot be and imm")
+                    }
+                },
+
+                icbm_asm::Operand::Reg(reg) => match dst {
+                    icbm_asm::Operand::Reg(d_reg) => {}
+
+                    icbm_asm::Operand::Stack(d_off) => {}
+                    _ => {
+                        panic!("dst cannot be and imm")
+                    }
+                },
+
+                _ => {
+                    //this should never happen
                 }
             }
-        }
-        avt_asm::Instructions::Ret => {
-            lines.push("    halt\n".to_string());
         }
 
-        avt_asm::Instructions::Comp { val } => match val {
-            avt_asm::Expression::Register(v) => {
-                lines.push(format!("    bitcomp {}\n", v));
-            }
-            _ => panic!("bitwise should not be used on immidiates "),
-        },
-        avt_asm::Instructions::Neg { val } => match val {
-            avt_asm::Expression::Register(v) => {
-                lines.push(format!("    neg {}\n", v));
-            }
-            _ => panic!("bitwise should not be used on immidiates "),
-        },
-        avt_asm::Instructions::Dec { val } => match val {
-            avt_asm::Expression::Register(v) => {
-                lines.push(format!("    dec {}\n", v));
-            }
-            _ => panic!("bitwise should not be used on immidiates "),
-        },
+        icbm_asm::Instructions::AllocateStack(offset) => {}
+
+        icbm_asm::Instructions::Unary(uniop, dst) => {}
+
+        icbm_asm::Instructions::Ret => {}
     }
 }
 pub fn write_to_file(file: &str, lines: &Vec<String>) -> io::Result<()> {
@@ -63,4 +77,15 @@ pub fn write_to_file(file: &str, lines: &Vec<String>) -> io::Result<()> {
         write!(file, "{}", line)?;
     }
     Ok(())
+}
+
+pub fn register_to_string(register: icbm_asm::Reg) -> String {
+    match register {
+        icbm_asm::Reg::r0 => String::from("r0"),
+        icbm_asm::Reg::r1 => String::from("r1"),
+        icbm_asm::Reg::r2 => String::from("r2"),
+        icbm_asm::Reg::r3 => String::from("r3"),
+        icbm_asm::Reg::r4 => String::from("r4"),
+        icbm_asm::Reg::r5 => String::from("r5"),
+    }
 }
