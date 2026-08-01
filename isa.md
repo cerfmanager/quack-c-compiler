@@ -19,9 +19,18 @@ Non-branching instructions advance `pc` by 6. Branches and calls overwrite `pc` 
 
 ## Registers and flags
 
-- 6 general-purpose 32-bit registers: `R0`–`R5`. Any instruction touching a register calls `check_reg`, halting if the index is outside `0..5`.
+- 8 total 32-bit registers:
+  - **R0–R5**: General-purpose registers (free to use in any instruction)
+  - **R6 (RSP)**: Stack pointer
+    - Starts at `0x2000` and grows downward
+    - Automatically managed by `PUSHW`, `POPW`, `CALL`, `RET`
+    - Can also be manipulated by regular arithmetic/move instructions
+  - **R7 (RBP)**: Base pointer / frame pointer
+    - Convention: points to the start of the current stack frame
+    - Not automatically managed; caller is responsible for setup/teardown
+    - Useful for function prologue/epilogue code
+- Any instruction touching a register calls `check_reg`, halting if the index is outside `0..7`.
 - 4 single-bit flags: `ZF` (zero), `SF` (sign), `OF` (overflow), `CF` (carry). Primarily set by `CMP`; some arithmetic/logical ops also update `ZF` (noted per-instruction).
-- `sp` starts at `0x2000` and grows downward as you `PUSHW`.
 
 ## Opcode table
 
@@ -31,6 +40,8 @@ Non-branching instructions advance `pc` by 6. Branches and calls overwrite `pc` 
 | `irmovb` / `irmovw` / `irmovd` | `0x04` / `0x05` / `0x06` | Immediate load |
 | `mrmovb` / `mrmovw` / `mrmovd` | `0x07` / `0x08` / `0x09` | Memory load |
 | `rmmovb` / `rmmovw` / `rmmovd` | `0x0A` / `0x0B` / `0x0C` | Memory store |
+| `rmrmovd` | `0xAA` | Indirect memory load |
+| `rrmmovd` | `0xDD` | Indirect memory store |
 | `add` | `0x0D` | Arithmetic |
 | `sub` | `0x0E` | Arithmetic |
 | `inc` | `0x0F` | Arithmetic |
@@ -64,6 +75,8 @@ Non-branching instructions advance `pc` by 6. Branches and calls overwrite `pc` 
 | `halt` | `0x2B` | Control |
 | `neg` | `0x2C` | Unary arithmetic |
 | `bitcomp` | `0x2D` | Unary logical |
+| `immovb` | `0x2E` | Immediate to memory |
+| `immovw` | `0x2F` | Immediate to memory |
 
 ---
 
@@ -151,6 +164,78 @@ rmmovd $addr, rSRC
 Write from register to memory: `mem[addr] = R[ra]`, truncated to 1/2/4 bytes per variant. Same address encoding as `MRMOV`.
 
 No flags affected.
+
+---
+
+## Indirect memory addressing
+
+These instructions enable pointer-style operations by using a register's value as a memory address.
+
+### `RMRMOVD` — `0xAA`
+
+```asm
+rmrmovd rADDR, rDST
+```
+
+Read from memory at an address stored in a register: `R[ra] = mem[R[b2]]` (32-bit read).
+- **ra** is the destination register
+- **b2** is the register containing the address (pointer)
+
+Bounds-checked; out-of-range address halts with memory error.
+
+No flags affected.
+
+### `RRMMOVD` — `0xDD`
+
+```asm
+rrmmovd rSRC, rADDR
+```
+
+Write to memory at an address stored in a register: `mem[R[b2]] = R[ra]` (32-bit write).
+- **ra** is the source register
+- **b2** is the register containing the address (pointer)
+
+Bounds-checked; out-of-range address halts with memory error.
+
+No flags affected.
+
+**Example usage — following a pointer chain:**
+```asm
+irmovd $0x1000, r0         # r0 = address of pointer
+rmrmovd r0, r1             # r1 = *r0 (dereference)
+irmovd $0x42, r2           # r2 = 0x42
+rrmmovd r2, r1             # *r1 = 0x42 (write through pointer)
+```
+
+---
+
+## Immediate to memory
+
+### `IMMOVB` — `0x2E`
+
+```asm
+immovb $imm, $addr
+```
+
+Write an 8-bit immediate value directly to memory: `mem[addr] = imm`. Address comes from `b2`/`b3` (16-bit little-endian), immediate is `b4` (single byte).
+
+Bounds-checked against `MEM_SIZE` (8192); out-of-range address halts with memory error.
+
+No flags affected.
+
+### `IMMOVW` — `0x2F`
+
+```asm
+immovw $imm, $addr
+```
+
+Write a 16-bit immediate value directly to memory: `mem[addr] = imm` (little-endian). Address comes from `b2`/`b3` (16-bit), immediate is `b4`/`b5` (16-bit little-endian).
+
+Bounds-checked against `MEM_SIZE`; out-of-range address halts with memory error.
+
+No flags affected.
+
+**Note:** These instructions are useful for initializing data in memory without requiring a register. For 32-bit immediates, load to a register first with `irmovd`, then store with `rmmovd`.
 
 ---
 
@@ -508,7 +593,11 @@ Sets `cpu->halted = 1`. The run loop stops; `pc` stays pointing at the `HALT` in
 
 ## Assembly syntax notes
 
-- **Register operands:** `rX` where X ∈ {0..5}
+- **Register operands:** `rX` where X ∈ {0..7}
+  - `r0`–`r5` are general-purpose
+  - `r6` or `rsp` refers to the stack pointer
+  - `r7` or `rbp` refers to the base/frame pointer
+  - Most assemblers accept both numeric and named forms
 - **Immediates:** `$value` (decimal or hex `0x...`)
 - **Memory addresses:** `$addr` (same format as immediates)
 - **Labels:** Resolved to 16-bit addresses by assembler

@@ -1,5 +1,4 @@
 use crate::icbm_asm;
-use crate::icbm_asm::Reg::{r0, r3};
 
 use std::fs::File;
 use std::io;
@@ -29,10 +28,12 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
                     }
 
                     icbm_asm::Operand::Stack(d_off) => {
-                        lines.push(format!("irmovd ${d_off} r3"));
-                        lines.push(format!("rrmovd r5 r2"));
-                        lines.push(format!("sub r3 r2"));
-                        lines.push(format!("immovd ${val} r2"))
+                        let offset = -d_off;
+                        lines.push(format!("irmovd ${offset} r5"));
+                        lines.push(format!("rrmovd r6 r4"));
+                        lines.push(format!("sub r5 r4"));
+                        lines.push(format!("irmovd ${val} r5"));
+                        lines.push(format!("rrmmovd r5 r4"))
                     }
 
                     _ => {

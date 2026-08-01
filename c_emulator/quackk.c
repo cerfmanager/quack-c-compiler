@@ -257,8 +257,10 @@ static void mem_write32(uint16_t addr, uint32_t v) {
 // =================
 static void cpu_reset(cpu_t *cpu) {
   cpu->pc = 0;
-  cpu->sp = SP_INIT;
-  cpu->r[0] = cpu->r[1] = cpu->r[2] = cpu->r[3] = 0;
+  RSP = SP_INIT;
+  for (int i = 0; i < 8; i++) {
+      cpu->r[i] = 0;
+    }
   cpu->zf = 0;
   cpu->sf = 0;
   cpu->of = 0;
@@ -269,8 +271,8 @@ static void cpu_reset(cpu_t *cpu) {
 static void set_zf(uint8_t r, cpu_t *cpu) { cpu->zf = cpu->r[r] == 0; }
 
 static void check_reg(uint8_t r) {
-  if (r > 5)
-    die("Invalid register index (valid: 0..3)");
+  if (r > 7)
+    die("Invalid register index (valid: 0..6)");
 }
 
 static instr_t fetch(cpu_t *cpu) {
