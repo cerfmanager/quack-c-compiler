@@ -131,6 +131,34 @@ pub fn convert_op(op: icbm::Unary_Operator) -> Unary_Operator {
     };
 }
 
+pub fn replace_pseudo(instructions: &mut Vec<Instructions>) -> StackFrame {
+    let mut map: HashMap<String, u32> = HashMap::new();
+    let offset: u32 = 0;
+    for index in 0..instructions.len() {
+        match instructions[index] {
+            Instructions::Mov(src, dst) => {
+                match src {
+                    Operand::Pseudo(val) => {
+                        if map.contains_key(&val) {
+                            instructions[index] = Mov(Operand::Stack(*map.get(&val).unwrap()), dst)
+                        }
+                    }
+                    _ => {}
+                }
+                match dst {
+                    Operand::Pseudo(val) => {
+                        
+                    }
+                    _ => {}
+                }
+            }
+            Instructions::Unary(uniop, operand) => match operand {
+                Operand::Pseudo(val) => {}
+                _ => {}
+            },
+            _ => {}
+        }
+    }
 
 
 
