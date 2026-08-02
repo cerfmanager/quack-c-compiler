@@ -7,17 +7,17 @@ use std::io::Write;
 pub fn asm_to_quack(program: icbm_asm::Program, file: &str) {
     let mut lines: Vec<String> = Vec::new();
     emit_function(&program.function, &mut lines);
-    lines.push(format!("halt\n"));
     write_to_file(file, &lines).expect("failed to write to file");
 }
 
 fn emit_function(function: &icbm_asm::Function, lines: &mut Vec<String>) {
+    let is_entry = function.identifier == "main" || function.identifier == "_start";
     lines.push(format!("{}:\n", function.identifier));
     emit_prologue(lines);
     for instruction in &function.body {
         emit_instruction(instruction, lines);
     }
-    emit_epilogue(lines);
+    emit_return(lines, is_entry);
 }
 
 fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String>) {
@@ -126,9 +126,7 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
             },
         },
 
-        icbm_asm::Instructions::Ret => {
-            lines.push(format!("ret\n"));
-        }
+        icbm_asm::Instructions::Ret => {}
     }
 }
 pub fn write_to_file(file: &str, lines: &Vec<String>) -> io::Result<()> {
@@ -160,5 +158,13 @@ fn emit_prologue(lines: &mut Vec<String>) {
 fn emit_epilogue(lines: &mut Vec<String>) {
     lines.push("rrmovd r7, r6\n".to_string());
     lines.push("popw r7\n".to_string());
-    lines.push("ret\n".to_string());
+}
+
+fn emit_return(lines: &mut Vec<String>, is_entry: bool) {
+    emit_epilogue(lines);
+    if is_entry {
+        lines.push("halt\n".to_string());
+    } else {
+        lines.push("ret\n".to_string());
+    }
 }
