@@ -17,7 +17,7 @@ TODO:
 
 // definitions
 // size of memory array
-#define MEM_SIZE 8192
+#define MEM_SIZE 8193
 // maximum accecible memory address become 0x2000
 
 // memory location definitions
@@ -257,10 +257,11 @@ static void mem_write32(uint16_t addr, uint32_t v) {
 // =================
 static void cpu_reset(cpu_t *cpu) {
   cpu->pc = 0;
+  for (int i = 0; i < 6; i++) {
+    cpu->r[i] = 0;
+  }
   RSP = SP_INIT;
-  for (int i = 0; i < 8; i++) {
-      cpu->r[i] = 0;
-    }
+  RBP = RSP;
   cpu->zf = 0;
   cpu->sf = 0;
   cpu->of = 0;
@@ -317,8 +318,8 @@ static void cpu_step(cpu_t *cpu, int debug) {
 
   /* In debug mode, print a simple trace */
   if (debug) {
-      printf("PC=%04X OP=%02X R0=%04X R1=%04X R2=%04X R3=%04X ZF=%u SF=%u OF=%u CF=%u SP=%04X\n",
-             cpu->pc, in.op, cpu->r[0], cpu->r[1], cpu->r[2], cpu->r[3], cpu->zf, cpu->sf, cpu->of, cpu->cf, cpu->sp);
+      printf("PC=%04X OP=%02X R0=%04X R1=%04X R2=%04X R3=%04X ZF=%u SF=%u OF=%u CF=%u \n",
+             cpu->pc, in.op, cpu->r[0], cpu->r[1], cpu->r[2], cpu->r[3], cpu->zf, cpu->sf, cpu->of, cpu->cf);
   }
 
 
@@ -651,11 +652,11 @@ static void cpu_step(cpu_t *cpu, int debug) {
     break;
   case OP_CALL:
     RSP -= 4;
-    mem_write16(RSP, cpu->pc + 4);
+    mem_write32(RSP, cpu->pc + 4);
     cpu->pc = u16_from_le(in.b2, in.b3);
     break;
   case OP_RET:
-    cpu->pc = mem_read16(RSP);
+    cpu->pc = mem_read32(RSP);
     RSP += 4;
     break;
 

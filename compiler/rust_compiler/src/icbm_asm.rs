@@ -30,6 +30,8 @@ pub enum Reg {
     r3,
     r4,
     r5,
+    r6,
+    r7,
 }
 
 pub struct Function {

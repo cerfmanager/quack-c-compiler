@@ -7,14 +7,17 @@ use std::io::Write;
 pub fn asm_to_quack(program: icbm_asm::Program, file: &str) {
     let mut lines: Vec<String> = Vec::new();
     emit_function(&program.function, &mut lines);
+    lines.push(format!("halt\n"));
     write_to_file(file, &lines).expect("failed to write to file");
 }
 
 fn emit_function(function: &icbm_asm::Function, lines: &mut Vec<String>) {
     lines.push(format!("{}:\n", function.identifier));
+    emit_prologue(lines);
     for instruction in &function.body {
         emit_instruction(instruction, lines);
     }
+    emit_epilogue(lines);
 }
 
 fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String>) {
@@ -24,16 +27,16 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
                 icbm_asm::Operand::Imm(val) => match dst {
                     icbm_asm::Operand::Reg(d_reg) => {
                         let reg = register_to_string(*d_reg);
-                        lines.push(format!("irmovd ${val} r{reg}\n"));
+                        lines.push(format!("irmovd ${val}, {reg}\n"));
                     }
 
                     icbm_asm::Operand::Stack(d_off) => {
                         let offset = -d_off;
-                        lines.push(format!("irmovd ${offset} r5"));
-                        lines.push(format!("rrmovd r6 r4"));
-                        lines.push(format!("sub r5 r4"));
-                        lines.push(format!("irmovd ${val} r5"));
-                        lines.push(format!("rrmmovd r5 r4"))
+                        lines.push(format!("irmovd ${offset}, r5\n"));
+                        lines.push(format!("rrmovd r6, r4\n"));
+                        lines.push(format!("sub r5, r4\n"));
+                        lines.push(format!("irmovd ${val}, r5\n"));
+                        lines.push(format!("rrmmovd r5, r4\n"))
                     }
 
                     _ => {
@@ -45,10 +48,10 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
                     icbm_asm::Operand::Reg(d_reg) => {
                         let final_offset = -offset;
                         let reg = register_to_string(*d_reg);
-                        lines.push(format!("irmovd ${final_offset} r5"));
-                        lines.push(format!("rrmovd r6 r4"));
-                        lines.push(format!("sub r5 r4"));
-                        lines.push(format!("rmrmovd r4 {reg}"))
+                        lines.push(format!("irmovd ${final_offset}, r5\n"));
+                        lines.push(format!("rrmovd r6, r4\n"));
+                        lines.push(format!("sub r5, r4\n"));
+                        lines.push(format!("rmrmovd r4, {reg}\n"))
                     }
 
                     _ => {
@@ -60,16 +63,16 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
                     icbm_asm::Operand::Reg(d_reg) => {
                         let s_reg = register_to_string(*reg);
                         let d_reg = register_to_string(*d_reg);
-                        lines.push(format!("rrmovd {s_reg} {d_reg}"))
+                        lines.push(format!("rrmovd {s_reg}, {d_reg}\n"))
                     }
 
                     icbm_asm::Operand::Stack(d_off) => {
                         let s_reg = register_to_string(*reg);
                         let final_offset = -d_off;
-                        lines.push(format!("irmovd ${final_offset} r5"));
-                        lines.push(format!("rrmovd r6 r4"));
-                        lines.push(format!("sub r5 r4"));
-                        lines.push(format!("rrmmovd {s_reg} r4"))
+                        lines.push(format!("irmovd ${final_offset}, r5\n"));
+                        lines.push(format!("rrmovd r6, r4\n"));
+                        lines.push(format!("sub r5, r4\n"));
+                        lines.push(format!("rrmmovd {s_reg}, r4\n"))
                     }
                     _ => {
                         panic!("dst cannot be and imm")
@@ -82,11 +85,50 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
             }
         }
 
-        icbm_asm::Instructions::AllocateStack(offset) => {}
+        icbm_asm::Instructions::AllocateStack(offset) => {
+            lines.push(format!("irmovd ${offset}, r5\n"));
+            lines.push(format!("sub r5, r6\n"));
+        }
 
-        icbm_asm::Instructions::Unary(uniop, dst) => {}
+        icbm_asm::Instructions::Unary(uniop, dst) => match uniop {
+            icbm_asm::Unary_Operator::Neg => match dst {
+                icbm_asm::Operand::Reg(reg) => {
+                    let f_register = register_to_string(*reg);
+                    lines.push(format!("neg {f_register}\n"))
+                }
+                icbm_asm::Operand::Stack(offset) => {
+                    let final_offset = -offset;
+                    lines.push(format!("irmovd ${final_offset}, r5\n"));
+                    lines.push(format!("rrmovd r6, r4\n"));
+                    lines.push(format!("sub r5, r4\n"));
+                    lines.push(format!("rmrmovd r4, r3\n"));
+                    lines.push(format!("neg r3\n"));
+                    lines.push(format!("rrmmovd r3, r4\n"));
+                }
+                _ => {}
+            },
 
-        icbm_asm::Instructions::Ret => {}
+            icbm_asm::Unary_Operator::Not => match dst {
+                icbm_asm::Operand::Reg(reg) => {
+                    let f_register = register_to_string(*reg);
+                    lines.push(format!("bitcomp {f_register}\n"))
+                }
+                icbm_asm::Operand::Stack(offset) => {
+                    let final_offset = -offset;
+                    lines.push(format!("irmovd ${final_offset}, r5\n"));
+                    lines.push(format!("rrmovd r6, r4\n"));
+                    lines.push(format!("sub r5, r4\n"));
+                    lines.push(format!("rmrmovd r4, r3\n"));
+                    lines.push(format!("bitcomp r3\n"));
+                    lines.push(format!("rrmmovd r3, r4\n"));
+                }
+                _ => {}
+            },
+        },
+
+        icbm_asm::Instructions::Ret => {
+            lines.push(format!("ret\n"));
+        }
     }
 }
 pub fn write_to_file(file: &str, lines: &Vec<String>) -> io::Result<()> {
@@ -105,5 +147,18 @@ pub fn register_to_string(register: icbm_asm::Reg) -> String {
         icbm_asm::Reg::r3 => String::from("r3"),
         icbm_asm::Reg::r4 => String::from("r4"),
         icbm_asm::Reg::r5 => String::from("r5"),
+        icbm_asm::Reg::r6 => String::from("r6"),
+        icbm_asm::Reg::r7 => String::from("r7"),
     }
+}
+
+fn emit_prologue(lines: &mut Vec<String>) {
+    lines.push("pushw r7\n".to_string());
+    lines.push("rrmovd r6, r7\n".to_string());
+}
+
+fn emit_epilogue(lines: &mut Vec<String>) {
+    lines.push("rrmovd r7, r6\n".to_string());
+    lines.push("popw r7\n".to_string());
+    lines.push("ret\n".to_string());
 }
