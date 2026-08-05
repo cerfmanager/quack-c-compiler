@@ -19,6 +19,7 @@ the assembler and compiler are part of a bigger general package, the ability to 
 cargo run -p rust_compiler --release <yourfile>.c
 ```
 to compile 
+
 note that currently changing the name of the output file is not supported since the name of the file doenst change the assembly generation, renaming the file manually doesn't break anything 
 
 ```
