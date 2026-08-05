@@ -24,7 +24,7 @@ note that currently changing the name of the output file is not supported since 
 ```
 cargo run -p rust_assembler --release <yourfile>.qasm
 ```
-to assemble \\
+to assemble //
 then compile the quackk emulator using a standard C compiler
 this compilation currently only works for unix based machines as stdio and stdlib are linux packages, windows support might will arrive much much later
 
