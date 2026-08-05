@@ -5,41 +5,42 @@
 Alexandre Kozlowski DACS Computer Science 
 
 ## Description
-This is a small c compiler written currently in python , it compiles standard C to a cpu emulator that reads DUCK bin files , the compiler turns C into QASM which can be then translated to DUCK by the Quassembler , which can then be read by the cpu emulator
+This is a small c compiler written in rust, it compiles standard C to a cpu emulator that reads DUCK bin files , the compiler turns C into QASM which can be then translated to DUCK by the Quassembler , which can then be read by the cpu emulator
 
 ## requirements 
 
-python 3.13.5 (this is installed by default on mac and linux and is easily downloadable on the python website for windows)
-
-## Installation
-Install all the python files 
+lastest rust version
 
 ## Usage
 
-for windows run 
-```
-python qompiler.py [name of your file].c
-python quassembler.py [same file name].qasm
-```
-for the assembler you will find your file in the same folder as where the compiler sits so if you dont move it you will have to refence the correct folder 
-then run it in the duck.c bin
+the assembler and compiler are part of a bigger general package, the ability to compile and assemble the file in one pass will arrive in a future version for now use 
 
-for macos and linux
 ```
-python3 quompiler.py [name of your file].c
-python3 quassembler.py [same file name].qasm
+cargo run -p rust_compiler --release <yourfile>.c
 ```
+to compile 
+note that currently changing the name of the output file is not supported since the name of the file doenst change the assembly generation, renaming the file manually doesn't break anything 
 
+```
+cargo run -p rust_assembler --release <yourfile>.qasm
+```
+to assemble 
+then compile the quackk emulator using a standard C compiler
+this compilation currently only works for unix based machines as stdio and stdlib are linux packages, windows support might will arrive much much later
 
 ## Roadmap
-Currently starting the refactor to rust, this might take a while as I get used to the language
+  -floating point number support
+  -linking
+  -binary operators
+  -variables
+  -branching and loops
+  -functions
+  -stdio 
+  -pointers
 
-
-## Authors and acknowledgment
-
-
+and as much of C99 im motivated to add 
 ## License
-For open source projects, say how it is licensed.
+will prob add gpl when I have time
 
 ## Project status
 In developement

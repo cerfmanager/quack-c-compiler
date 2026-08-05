@@ -6,7 +6,7 @@ full emulator rewwrite to implement ncuses cli, signed values
 
 TODO:
 -better way to run the program , maybe a gui ?
--documentation on all the opcodes
+
 
  */
 
@@ -66,10 +66,6 @@ TODO: for io maybe implement the output in another way ???
 
 #define OP_RMRMOVD 0xAA
 #define OP_RRMMOVD 0xDD
-
-
-
-//TODO: restore register to memory register
 
 // arithemtic
 #define OP_ADD 0x0D
