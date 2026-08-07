@@ -32,9 +32,7 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
 
                     icbm_asm::Operand::Stack(d_off) => {
                         let offset = -d_off;
-                        lines.push(format!("irmovd ${offset}, r5\n"));
-                        lines.push(format!("rrmovd r7, r4\n"));
-                        lines.push(format!("sub r5, r4\n"));
+
                         lines.push(format!("irmovd ${val}, r5\n"));
                         lines.push(format!("rrmmovd r5, r4\n"))
                     }
@@ -46,11 +44,8 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
 
                 icbm_asm::Operand::Stack(offset) => match dst {
                     icbm_asm::Operand::Reg(d_reg) => {
-                        let final_offset = -offset;
                         let reg = register_to_string(*d_reg);
-                        lines.push(format!("irmovd ${final_offset}, r5\n"));
-                        lines.push(format!("rrmovd r7, r4\n"));
-                        lines.push(format!("sub r5, r4\n"));
+                        emit_stack_offset(lines, *offset);
                         lines.push(format!("rmrmovd {reg}, r4\n"))
                     }
 
@@ -68,10 +63,7 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
 
                     icbm_asm::Operand::Stack(d_off) => {
                         let s_reg = register_to_string(*reg);
-                        let final_offset = -d_off;
-                        lines.push(format!("irmovd ${final_offset}, r5\n"));
-                        lines.push(format!("rrmovd r7, r4\n"));
-                        lines.push(format!("sub r5, r4\n"));
+                        emit_stack_offset(lines, *offset);
                         lines.push(format!("rrmmovd {s_reg}, r4\n"))
                     }
                     _ => {
@@ -97,10 +89,7 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
                     lines.push(format!("neg {f_register}\n"))
                 }
                 icbm_asm::Operand::Stack(offset) => {
-                    let final_offset = -offset;
-                    lines.push(format!("irmovd ${final_offset}, r5\n"));
-                    lines.push(format!("rrmovd r7, r4\n"));
-                    lines.push(format!("sub r5, r4\n"));
+                    emit_stack_offset(lines, *offset);
                     lines.push(format!("rmrmovd r3, r4\n"));
                     lines.push(format!("neg r3\n"));
                     lines.push(format!("rrmmovd r3, r4\n"));
@@ -114,10 +103,7 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
                     lines.push(format!("bitcomp {f_register}\n"))
                 }
                 icbm_asm::Operand::Stack(offset) => {
-                    let final_offset = -offset;
-                    lines.push(format!("irmovd ${final_offset}, r5\n"));
-                    lines.push(format!("rrmovd r7, r4\n"));
-                    lines.push(format!("sub r5, r4\n"));
+                    emit_stack_offset(lines, *offset);
                     lines.push(format!("rmrmovd r3, r4\n"));
                     lines.push(format!("bitcomp r3\n"));
                     lines.push(format!("rrmmovd r3, r4\n"));
@@ -167,4 +153,11 @@ fn emit_return(lines: &mut Vec<String>, is_entry: bool) {
     } else {
         lines.push("ret\n".to_string());
     }
+}
+
+fn emit_stack_offset(lines: &mut Vec<String>, offset: i32) {
+    let f_offset = -offset;
+    lines.push(format!("irmovd ${f_offset}, r5\n"));
+    lines.push(format!("rrmovd r7, r4\n"));
+    lines.push(format!("sub r5, r4\n"));
 }
