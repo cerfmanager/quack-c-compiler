@@ -43,17 +43,17 @@ fn lex(buffer: &String) -> Vec<Tokens> {
                 chars.next();
                 tokens.push(Tokens::Semicolon)
             }
-            '-' => match chars.peek().expect("") {
-                '-' => {
-                    chars.next();
-                    chars.next();
-                    tokens.push(Tokens::Decrement)
+            '-' => {
+                chars.next();
+                match chars.peek().unwrap() {
+                    '-' => {
+                        println!("{:?}", chars.peek().unwrap());
+                        chars.next();
+                        tokens.push(Tokens::Decrement)
+                    }
+                    _ => tokens.push(Tokens::Negation),
                 }
-                _ => {
-                    chars.next();
-                    tokens.push(Tokens::Negation)
-                }
-            },
+            }
             '~' => {
                 chars.next();
                 tokens.push(Tokens::BitWiseComp)

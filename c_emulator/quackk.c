@@ -314,8 +314,9 @@ static void cpu_step(cpu_t *cpu, int debug) {
 
   /* In debug mode, print a simple trace */
   if (debug) {
-      printf("PC=%04X OP=%02X R0=%04X R1=%04X R2=%04X R3=%04X ZF=%u SF=%u OF=%u CF=%u \n",
-             cpu->pc, in.op, cpu->r[0], cpu->r[1], cpu->r[2], cpu->r[3], cpu->zf, cpu->sf, cpu->of, cpu->cf);
+      printf("PC=%04X OP=%02X R0=%08X R1=%08X R2=%08X R3=%08X R4=%08X R5=%08X RSP=%08X RBP=%08X ZF=%u SF=%u OF=%u CF=%u \n",
+             cpu->pc, in.op, cpu->r[0], cpu->r[1], cpu->r[2], cpu->r[3],
+             cpu->r[4], cpu->r[5], RSP, RBP, cpu->zf, cpu->sf, cpu->of, cpu->cf);
   }
 
 
@@ -659,10 +660,13 @@ static void cpu_step(cpu_t *cpu, int debug) {
   case OP_NEG:
     check_reg(in.ra);
     cpu->r[in.ra] = -cpu->r[in.ra];
+    cpu->pc += 6;
     break;
   case OP_BITCOMP:
     check_reg(in.ra);
     cpu->r[in.ra] = ~cpu->r[in.ra];
+    cpu->pc += 6;
+    break;
 
 
   default:
@@ -704,6 +708,6 @@ int main(int argc, char **argv) {
   cpu_run(&cpu, debug);
 
   printf("\nHALT\n");
-  printf("R0(final)=%04X\n", cpu.r[0]);
+  printf("R0(final)=%08X\n", cpu.r[0]);
   return 0;
 }

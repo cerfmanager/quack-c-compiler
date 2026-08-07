@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use crate::{
     lexer::Tokens::{self},
     parser::UnaryOperator::{Complement, Decrement, Negate},
@@ -7,7 +9,7 @@ pub enum Expression {
     Constant(i64),
     Unary(UnaryOperator, Box<Expression>),
 }
-
+#[derive(Debug)]
 pub enum UnaryOperator {
     Complement,
     Negate,
@@ -28,6 +30,7 @@ pub struct Program {
 }
 
 pub fn parse_program(tokens: &mut Vec<Tokens>) -> Program {
+    println!("parsing program");
     let program = Program {
         function: parse_function(tokens),
     };
@@ -38,6 +41,7 @@ pub fn parse_program(tokens: &mut Vec<Tokens>) -> Program {
 }
 
 pub fn parse_function(tokens: &mut Vec<Tokens>) -> Function {
+    println!("parsing function");
     expect(Tokens::Int, tokens);
     let identifier = expect(Tokens::Identifier("".to_string()), tokens);
     expect(Tokens::OpenParenthesis, tokens);
@@ -50,6 +54,7 @@ pub fn parse_function(tokens: &mut Vec<Tokens>) -> Function {
 
 //TODO: add the unary things here
 pub fn parse_statement(tokens: &mut Vec<Tokens>) -> Statement {
+    println!("parsing statement");
     expect(Tokens::Return, tokens);
     let return_val = parse_exp(tokens);
     expect(Tokens::Semicolon, tokens);
@@ -57,6 +62,7 @@ pub fn parse_statement(tokens: &mut Vec<Tokens>) -> Statement {
 }
 
 pub fn parse_exp(tokens: &mut Vec<Tokens>) -> Expression {
+    println!("parsing expression");
     // let next_token = peep_token(tokens);
     // if next_token == Tokens::OpenParenthesis {
     //     let exp_val = parse_exp(tokens);
@@ -69,22 +75,26 @@ pub fn parse_exp(tokens: &mut Vec<Tokens>) -> Expression {
 
     match peep_token(tokens) {
         Tokens::OpenParenthesis => {
+            take_token(tokens);
             let exp_val = parse_exp(tokens);
             expect(Tokens::CloseParenthesis, tokens);
             return exp_val;
         }
         Tokens::Decrement => {
+            take_token(tokens);
             let exp_val = parse_exp(tokens);
             let val = Expression::Unary(Decrement, Box::new(exp_val));
             return val;
         }
 
         Tokens::BitWiseComp => {
+            take_token(tokens);
             let exp_val = parse_exp(tokens);
             let val = Expression::Unary(Complement, Box::new(exp_val));
             return val;
         }
         Tokens::Negation => {
+            take_token(tokens);
             let exp_val = parse_exp(tokens);
             let val = Expression::Unary(Negate, Box::new(exp_val));
             return val;
@@ -118,5 +128,6 @@ pub fn take_token(tokens: &mut Vec<Tokens>) -> Tokens {
 }
 
 pub fn peep_token(tokens: &mut Vec<Tokens>) -> &Tokens {
+    println!("{:?}", &tokens[0]);
     &tokens[0]
 }

@@ -84,6 +84,7 @@ pub fn convert_unop(op: parser::UnaryOperator) -> Unary_Operator {
             return Unary_Operator::Negate;
         }
         _ => {
+            println!("unrecognised unop {:?}", op);
             panic!("not covered yet")
         }
     }

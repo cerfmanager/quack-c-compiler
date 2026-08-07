@@ -3,7 +3,7 @@ mod icbm;
 mod icbm_asm;
 mod lexer;
 mod parser;
-mod pseudo_replacer;
+
 use std::env;
 fn main() {
     let args: Vec<String> = env::args().collect();

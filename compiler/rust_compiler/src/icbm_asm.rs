@@ -198,9 +198,9 @@ pub fn inst_fix(instructions: &mut Vec<Instructions>) {
             Instructions::Mov(src, dst) => match src {
                 Operand::Stack(val) => match dst {
                     Operand::Stack(val) => {
-                        instructions[index] = Instructions::Mov(src, Operand::Reg(Reg::r5));
+                        instructions[index] = Instructions::Mov(src, Operand::Reg(Reg::r2));
                         instructions
-                            .insert(index + 1, Instructions::Mov(Operand::Reg(Reg::r5), dst));
+                            .insert(index + 1, Instructions::Mov(Operand::Reg(Reg::r2), dst));
                     }
                     _ => {}
                 },
