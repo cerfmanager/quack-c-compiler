@@ -32,6 +32,15 @@ Non-branching instructions advance `pc` by 6. Branches and calls overwrite `pc` 
 - Any instruction touching a register calls `check_reg`, halting if the index is outside `0..7`.
 - 4 single-bit flags: `ZF` (zero), `SF` (sign), `OF` (overflow), `CF` (carry). Primarily set by `CMP`; some arithmetic/logical ops also update `ZF` (noted per-instruction).
 
+
+other random information that might be usefull to some, when desigin the compiler i arbitrarely chose registers to do certain jobs, no clue if actual compiler do the same but here is the list
+- **R0**: final return value
+- **R1**: currently no use 
+- **R2**: immidiate values 
+- **R3**: operations on values 
+- **R4**: stack address to store variables
+- **R5**: stack offset to store variables
+
 ## Opcode table
 
 | Mnemonic | Opcode | Category |
