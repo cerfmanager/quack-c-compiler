@@ -33,6 +33,7 @@ Non-branching instructions advance `pc` by 6. Branches and calls overwrite `pc` 
 - 4 single-bit flags: `ZF` (zero), `SF` (sign), `OF` (overflow), `CF` (carry). Primarily set by `CMP`; some arithmetic/logical ops also update `ZF` (noted per-instruction).
 
 
+
 other random information that might be usefull to some, when desigin the compiler i arbitrarely chose registers to do certain jobs, no clue if actual compiler do the same but here is the list
 - **R0**: final return value
 - **R1**: currently no use 
@@ -102,6 +103,8 @@ Copies one register into another: `R[ra] = R[b3]`.
 - **b3** is the source (operand order is reversed from syntax)
 
 **⚠️ Implementation note:** All three variants (`B`/`W`/`D`) execute identically — each moves the *entire* 32-bit register, regardless of suffix. Byte/word size distinction is not implemented.
+
+this will probably change to a single MOV operand or actual size checks , which ever I find more fun to make
 
 No flags affected.
 
