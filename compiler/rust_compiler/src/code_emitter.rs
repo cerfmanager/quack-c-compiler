@@ -31,8 +31,7 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
                     }
 
                     icbm_asm::Operand::Stack(d_off) => {
-                        let offset = -d_off;
-
+                        emit_stack_offset(lines, *d_off);
                         lines.push(format!("irmovd ${val}, r5\n"));
                         lines.push(format!("rrmmovd r5, r4\n"))
                     }
@@ -48,7 +47,9 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
                         emit_stack_offset(lines, *offset);
                         lines.push(format!("rmrmovd {reg}, r4\n"))
                     }
-
+                    icbm_asm::Operand::Stack(offset) => {
+                        panic!("dst cannot be another stack offset")
+                    }
                     _ => {
                         panic!("dst cannot be and imm or another stack offset")
                     }
@@ -63,7 +64,7 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
 
                     icbm_asm::Operand::Stack(d_off) => {
                         let s_reg = register_to_string(*reg);
-                        emit_stack_offset(lines, *offset);
+                        emit_stack_offset(lines, *d_off);
                         lines.push(format!("rrmmovd {s_reg}, r4\n"))
                     }
                     _ => {
@@ -106,6 +107,19 @@ fn emit_instruction(instruction: &icbm_asm::Instructions, lines: &mut Vec<String
                     emit_stack_offset(lines, *offset);
                     lines.push(format!("rmrmovd r3, r4\n"));
                     lines.push(format!("bitcomp r3\n"));
+                    lines.push(format!("rrmmovd r3, r4\n"));
+                }
+                _ => {}
+            },
+            icbm_asm::Unary_Operator::Dec => match dst {
+                icbm_asm::Operand::Reg(reg) => {
+                    let f_register = register_to_string(*reg);
+                    lines.push(format!("dec {f_register}\n"))
+                }
+                icbm_asm::Operand::Stack(offset) => {
+                    emit_stack_offset(lines, *offset);
+                    lines.push(format!("rmrmovd r3, r4\n"));
+                    lines.push(format!("dec r3\n"));
                     lines.push(format!("rrmmovd r3, r4\n"));
                 }
                 _ => {}

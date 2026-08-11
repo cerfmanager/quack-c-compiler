@@ -18,6 +18,7 @@ pub enum Val {
 pub enum Unary_Operator {
     Complement,
     Negate,
+    Decrement,
 }
 
 pub struct Function {
@@ -83,6 +84,8 @@ pub fn convert_unop(op: parser::UnaryOperator) -> Unary_Operator {
         parser::UnaryOperator::Negate => {
             return Unary_Operator::Negate;
         }
+        parser::UnaryOperator::Decrement => return Unary_Operator::Decrement,
+
         _ => {
             println!("unrecognised unop {:?}", op);
             panic!("not covered yet")

@@ -2,27 +2,28 @@ use std::collections::HashMap;
 
 use crate::icbm;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Instructions {
     Mov(Operand, Operand),
     Unary(Unary_Operator, Operand),
     AllocateStack(i32),
     Ret,
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Unary_Operator {
     Neg,
     Not,
+    Dec,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Operand {
     Imm(i64),
     Reg(Reg),
     Pseudo(String),
     Stack(i32),
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Reg {
     r0,
     r1,
@@ -56,10 +57,11 @@ pub fn parse_function(function: icbm::Function) -> Function {
     // create the stack frame
     instructions.insert(0, Instructions::AllocateStack(-stack_size));
     // fix mov inst when both operands are stack
-    inst_fix(&mut instructions);
+    let new_inst = inst_fix(&mut instructions);
+    print!("{:?}", new_inst);
     Function {
         identifier,
-        body: instructions,
+        body: new_inst,
     }
 }
 
@@ -126,6 +128,15 @@ pub fn parse_instructions(inst: Vec<icbm::Instructions>) -> Vec<Instructions> {
                         }
                         _ => {}
                     },
+                    icbm::Unary_Operator::Decrement => match dst {
+                        icbm::Val::Var(var_val) => {
+                            instructions.push(Instructions::Unary(
+                                Unary_Operator::Dec,
+                                Operand::Pseudo(var_val.clone()),
+                            ));
+                        }
+                        _ => {}
+                    },
                 }
             }
         }
@@ -138,6 +149,7 @@ pub fn convert_op(op: icbm::Unary_Operator) -> Unary_Operator {
     return match op {
         icbm::Unary_Operator::Complement => Unary_Operator::Not,
         icbm::Unary_Operator::Negate => Unary_Operator::Neg,
+        icbm::Unary_Operator::Decrement => Unary_Operator::Dec,
     };
 }
 
@@ -192,22 +204,31 @@ pub fn replace_pseudo(instructions: &mut Vec<Instructions>) -> i32 {
     offset
 }
 
-pub fn inst_fix(instructions: &mut Vec<Instructions>) {
+pub fn inst_fix(instructions: &mut Vec<Instructions>) -> Vec<Instructions> {
+    let mut fixed_inst: Vec<Instructions> = Vec::new();
+
     for index in 0..instructions.len() {
         match instructions[index].clone() {
             Instructions::Mov(src, dst) => match src {
                 Operand::Stack(val) => match dst {
                     Operand::Stack(val) => {
-                        instructions[index] = Instructions::Mov(src, Operand::Reg(Reg::r2));
-                        instructions
-                            .insert(index + 1, Instructions::Mov(Operand::Reg(Reg::r2), dst));
+                        fixed_inst.push(Instructions::Mov(src, Operand::Reg(Reg::r2)));
+                        fixed_inst.push(Instructions::Mov(Operand::Reg(Reg::r2), dst));
                     }
-                    _ => {}
+                    _ => {
+                        fixed_inst.push(instructions[index].clone());
+                    }
                 },
-                _ => {}
+                _ => {
+                    fixed_inst.push(instructions[index].clone());
+                }
             },
 
-            _ => {}
+            _ => {
+                fixed_inst.push(instructions[index].clone());
+            }
         }
     }
+
+    return fixed_inst;
 }
