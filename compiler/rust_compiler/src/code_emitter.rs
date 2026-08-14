@@ -151,13 +151,15 @@ pub fn register_to_string(register: icbm_asm::Reg) -> String {
 }
 
 fn emit_prologue(lines: &mut Vec<String>) {
+    lines.push("# function prologue\n".to_string());
     lines.push("pushw r7\n".to_string());
-    lines.push("rrmovd r6, r7\n".to_string());
+    lines.push("rrmovd r6, r7\n\n".to_string());
 }
 
 fn emit_epilogue(lines: &mut Vec<String>) {
+    lines.push("# function epilogue\n".to_string());
     lines.push("rrmovd r7, r6\n".to_string());
-    lines.push("popw r7\n".to_string());
+    lines.push("popw r7\n\n".to_string());
 }
 
 fn emit_return(lines: &mut Vec<String>, is_entry: bool) {
@@ -171,7 +173,8 @@ fn emit_return(lines: &mut Vec<String>, is_entry: bool) {
 
 fn emit_stack_offset(lines: &mut Vec<String>, offset: i32) {
     let f_offset = -offset;
+    lines.push(format!("\n# stack offset {f_offset}\n"));
     lines.push(format!("irmovd ${f_offset}, r5\n"));
     lines.push(format!("rrmovd r7, r4\n"));
-    lines.push(format!("sub r5, r4\n"));
+    lines.push(format!("sub r5, r4\n\n"));
 }
